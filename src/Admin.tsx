@@ -25,25 +25,39 @@ interface QueryLog {
   at: string
 }
 
-const ADMIN_TOKEN = 'shake-debug-token'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://shakeai.onrender.com'
+const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN ?? ''
 
 export function Admin() {
   const [sites, setSites] = useState<Record<string, Site>>({})
   const [selectedKey, setSelectedKey] = useState<string>('')
   const [queries, setQueries] = useState<QueryLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const fetchSites = useCallback(async () => {
     try {
-      const response = await fetch('https://shakeai.onrender.com/admin/sites', {
-        headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+      if (!ADMIN_TOKEN) {
+        throw new Error('VITE_ADMIN_TOKEN is not configured')
+      }
+
+      const response = await fetch(`${API_BASE_URL}/admin/sites`, {
+        headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
       })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body.error ?? `Failed to load sites (${response.status})`)
+      }
+
       const data = await response.json()
       setSites(data)
       if (Object.keys(data).length > 0 && !selectedKey) {
         setSelectedKey(Object.keys(data)[0])
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch sites'
+      setError(message)
       console.error('Failed to fetch sites', error)
     } finally {
       setLoading(false)
@@ -52,12 +66,20 @@ export function Admin() {
 
   const fetchQueries = useCallback(async (key: string) => {
     try {
-      const response = await fetch(`https://shakeai.onrender.com/admin/queries?siteKey=${key}`, {
-        headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+      const response = await fetch(`${API_BASE_URL}/admin/queries?siteKey=${key}`, {
+        headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
       })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body.error ?? `Failed to load queries (${response.status})`)
+      }
+
       const data = await response.json()
       setQueries(data.reverse())
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch queries'
+      setError(message)
       console.error('Failed to fetch queries', error)
     }
   }, [])
@@ -91,19 +113,30 @@ export function Admin() {
     if (!name) return
 
     try {
-      const response = await fetch('https://shakeai.onrender.com/admin/sites', {
+      if (!ADMIN_TOKEN) {
+        throw new Error('VITE_ADMIN_TOKEN is not configured')
+      }
+
+      const response = await fetch(`${API_BASE_URL}/admin/sites`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ADMIN_TOKEN}`
+          Authorization: `Bearer ${ADMIN_TOKEN}`,
         },
         body: JSON.stringify({ name, siteId: name.toLowerCase().replace(/\s+/g, '-') }),
       })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body.error ?? `Failed to create site (${response.status})`)
+      }
 
       const data = await response.json()
       await fetchSites()
       setSelectedKey(data.siteKey)
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create site'
+      setError(message)
       console.error('Failed to create site', error)
     }
   }
@@ -120,6 +153,7 @@ export function Admin() {
           <button className="icon-btn" onClick={createSite} title="New Project">+</button>
         </div>
         <div className="site-list">
+          {error ? <p className="admin-error">{error}</p> : null}
           {Object.entries(sites).map(([key, site]) => (
             <button
               key={key}
