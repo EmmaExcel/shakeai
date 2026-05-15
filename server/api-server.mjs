@@ -19,7 +19,7 @@ function sendJson(response, status, body, origin = '*') {
   response.writeHead(status, {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Headers': 'content-type, x-site-key',
+    'Access-Control-Allow-Headers': 'content-type, x-site-key, authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   })
   response.end(JSON.stringify(body))
