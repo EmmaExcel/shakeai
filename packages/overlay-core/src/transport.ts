@@ -2,7 +2,7 @@ import type { AIOverlayAskPayload, AIOverlayModelConfig } from './types'
 
 const DEFAULT_OLLAMA_ENDPOINT = 'http://localhost:11434/api/chat'
 const DEFAULT_MODEL = 'qwen3-coder:480b-cloud'
-const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8787'
+const DEFAULT_API_BASE_URL = 'https://shakeai.onrender.com'
 
 type OllamaResponse = {
   message?: {

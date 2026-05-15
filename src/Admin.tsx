@@ -35,7 +35,7 @@ export function Admin() {
 
   const fetchSites = useCallback(async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8787/admin/sites', {
+      const response = await fetch('https://shakeai.onrender.com/admin/sites', {
         headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
       })
       const data = await response.json()
@@ -52,7 +52,7 @@ export function Admin() {
 
   const fetchQueries = useCallback(async (key: string) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8787/admin/queries?siteKey=${key}`, {
+      const response = await fetch(`https://shakeai.onrender.com/admin/queries?siteKey=${key}`, {
         headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
       })
       const data = await response.json()
@@ -91,7 +91,7 @@ export function Admin() {
     if (!name) return
 
     try {
-      const response = await fetch('http://127.0.0.1:8787/admin/sites', {
+      const response = await fetch('https://shakeai.onrender.com/admin/sites', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ export function Admin() {
 
 AIOverlay.init({
   siteKey: '${selectedKey}',
-  apiBaseUrl: 'http://127.0.0.1:8787'
+  apiBaseUrl: 'https://shakeai.onrender.com'
 })`}</code>
                 </pre>
               </div>

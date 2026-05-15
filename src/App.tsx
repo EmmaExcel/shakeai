@@ -13,7 +13,7 @@ function App() {
 
     const overlay = AIOverlay.init({
       siteKey: 'pk_demo_shakecursor',
-      apiBaseUrl: 'http://127.0.0.1:8787',
+      apiBaseUrl: 'https://shakeai.onrender.com',
       trigger: {
         shake: true,
         keyboardShortcut: 'mod+k',

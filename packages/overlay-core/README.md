@@ -9,7 +9,7 @@ import { AIOverlay } from '@shakecursor/overlay-core'
 
 const overlay = AIOverlay.init({
   siteKey: 'pk_demo_shakecursor',
-  apiBaseUrl: 'http://127.0.0.1:8787',
+  apiBaseUrl: 'https://shakeai.onrender.com',
 })
 
 overlay.activate()
