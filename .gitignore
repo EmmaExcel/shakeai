@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+server/logs/*.jsonl
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+dist-ssr
+**/dist
+
+# Environment variables
+.env
+.env.*
+!.env.example
+*.local
+
+# Server Data / RAG Artifacts
+server/data/*.vectors.json
+server/data/*.chunks.json
+# Keep the base pages/configs but ignore the heavy generated indices
+# !server/data/demo-docs.pages.json
+# !server/data/sites.json
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

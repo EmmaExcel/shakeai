@@ -1,0 +1,87 @@
+{
+  "pk_demo_shakecursor": {
+    "siteId": "demo-docs",
+    "name": "Shake Cursor Demo Docs",
+    "allowedOrigins": [
+      "*"
+    ],
+    "model": {
+      "provider": "openrouter",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "qwen/qwen3-coder:free"
+    },
+    "rag": {
+      "enabled": true,
+      "topK": 4,
+      "indexPath": "./server/data/demo-docs.vectors.json"
+    }
+  },
+  "pk_a1996af7dff13583ac31019237f23a9b": {
+    "siteId": "blog-rag",
+    "name": "External Blog",
+    "allowedOrigins": [
+      "*"
+    ],
+    "model": {
+      "provider": "openrouter",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "qwen/qwen3-coder:free"
+    },
+    "rag": {
+      "enabled": false,
+      "topK": 4,
+      "indexPath": "./server/data/demo-docs.vectors.json"
+    }
+  },
+  "pk_95d37bc15886d484aa73a1d91f7d1d3e": {
+    "siteId": "hardening-test",
+    "name": "Hardening Test",
+    "allowedOrigins": [
+      "*"
+    ],
+    "model": {
+      "provider": "openrouter",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "qwen/qwen3-coder:free"
+    },
+    "rag": {
+      "enabled": false,
+      "topK": 4,
+      "indexPath": "./server/data/demo-docs.vectors.json"
+    }
+  },
+  "pk_9460cfbc2a0198ef28cd03a4e3da95a0": {
+    "siteId": "new-site",
+    "name": "Atomic Test",
+    "allowedOrigins": [
+      "*"
+    ],
+    "model": {
+      "provider": "openrouter",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "qwen/qwen3-coder:free"
+    },
+    "rag": {
+      "enabled": false,
+      "topK": 4,
+      "indexPath": "./server/data/demo-docs.vectors.json"
+    }
+  },
+  "pk_7cc290ba76cfc8546ee6617b813deaf2": {
+    "siteId": "atomic-test-2",
+    "name": "Atomic Test 2",
+    "allowedOrigins": [
+      "*"
+    ],
+    "model": {
+      "provider": "openrouter",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "model": "qwen/qwen3-coder:free"
+    },
+    "rag": {
+      "enabled": false,
+      "topK": 4,
+      "indexPath": "./server/data/demo-docs.vectors.json"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "activation",
+    "url": "https://docs.shakecursor.local/activation",
+    "title": "Activating AI mode",
+    "content": "Shake Cursor AI activates when the user rapidly moves the pointer left and right. The SDK also supports a keyboard fallback using Cmd+K on macOS and Ctrl+K on Windows or Linux. Site owners can disable the shake trigger or change the shortcut in AIOverlay.init."
+  },
+  {
+    "id": "selection",
+    "url": "https://docs.shakecursor.local/selection",
+    "title": "Selection capture",
+    "content": "The overlay can capture highlighted text, image metadata, and visible DOM element text. Developers can block private content with data-ai-private or data-ai-overlay-ignore. They can also restrict selection to specific areas with allowedSelectors."
+  },
+  {
+    "id": "models",
+    "url": "https://docs.shakecursor.local/models",
+    "title": "Model routing",
+    "content": "The hosted API routes requests to the model configured for the site key. The first implementation supports Ollama and custom JSON endpoints. Production provider keys should live on the backend, not in the browser SDK configuration."
+  },
+  {
+    "id": "rag",
+    "url": "https://docs.shakecursor.local/rag",
+    "title": "Site knowledge and retrieval",
+    "content": "RAG adds site-specific knowledge to each answer. The API receives the selected page context and user question, retrieves relevant chunks from the site's indexed content, and injects those chunks into the model prompt before calling the provider."
+  },
+  {
+    "id": "analytics",
+    "url": "https://docs.shakecursor.local/analytics",
+    "title": "Query analytics",
+    "content": "Query logs help site owners understand what users are confused about. A useful analytics dashboard should show top questions, pages with the most AI usage, failed requests, selected element types, and unanswered topics."
+  }
+]

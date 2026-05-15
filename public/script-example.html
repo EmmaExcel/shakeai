@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shake Cursor SDK - Script Tag Example</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background-color: #f9fafb;
+    }
+    h1 { color: #111; }
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      margin-bottom: 24px;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9em;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 9999px;
+      font-size: 0.8em;
+      font-weight: 600;
+      background: #14b8a6;
+      color: white;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="badge">SDK Script Integration</div>
+  <h1>Shake Cursor Example</h1>
+  
+  <div class="card">
+    <p>This page demonstrates how to load the Shake Cursor SDK using a simple <code>&lt;script&gt;</code> tag.</p>
+    <p>To test the AI features:</p>
+    <ol>
+      <li><strong>Shake your mouse</strong> rapidly left and right.</li>
+      <li>Or press <strong>Cmd + K</strong> (Mac) / <strong>Ctrl + K</strong> (Windows).</li>
+      <li>Select any text on this page to ask a question.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Sample Content</h2>
+    <p>Retrieval Augmented Generation (RAG) is a technique that gives large language models access to specific, external data to improve the accuracy and relevance of their responses.</p>
+    <p>By using Shake Cursor, site owners can index their documentation and provide instant, context-aware help to their visitors without forcing them to leave the current page.</p>
+  </div>
+
+  <!-- Load the SDK bundle from our local dist -->
+  <!-- In production, this would be on a CDN -->
+  <script src="/packages/overlay-core/dist/overlay.global.js"></script>
+  
+  <script>
+    // Initialize the overlay when the window loads
+    window.addEventListener('load', function() {
+      if (window.AIOverlay) {
+        window.AIOverlay.init({
+          siteKey: 'pk_demo_shakecursor',
+          apiBaseUrl: 'http://127.0.0.1:8787',
+          theme: {
+            primaryColor: '#14b8a6'
+          }
+        });
+        console.log('Shake Cursor initialized successfully');
+      }
+    });
+  </script>
+</body>
+</html>

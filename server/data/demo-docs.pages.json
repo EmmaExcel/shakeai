@@ -1,0 +1,27 @@
+[
+  {
+    "url": "https://docs.shakecursor.local/getting-started",
+    "title": "Getting Started with Shake Cursor",
+    "content": "Shake Cursor is an open-source library that adds a context-aware AI overlay to any website. It works by monitoring user interactions, specifically the 'shake' gesture of the mouse pointer. When a shake is detected, the overlay appears, allowing the user to ask questions about what they were just looking at. To get started, you need to install the @shakecursor/overlay package and initialize it with your public API key. The library automatically handles selection capture and communication with the Shake Cursor backend. You can customize the look and feel of the overlay using CSS variables or by passing options to the initialization function. For example, you can change the primary color, the shake sensitivity, and the keyboard shortcuts."
+  },
+  {
+    "url": "https://docs.shakecursor.local/activation",
+    "title": "Activating the AI Overlay",
+    "content": "The primary way to activate Shake Cursor is by shaking your mouse pointer rapidly left and right. This gesture is natural when a user is frustrated or confused, making it an ideal trigger for contextual help. Under the hood, the SDK tracks the horizontal velocity of the mouse. If it crosses a certain threshold multiple times within a short window, the activation event is fired. For users who prefer keyboard navigation, Shake Cursor also supports a global shortcut. By default, this is Cmd+K on macOS and Ctrl+K on other platforms. You can configure these triggers during initialization. For instance, you might want to disable the shake trigger entirely if your site already uses mouse gestures for other features. You can do this by setting `shake: false` in the init options."
+  },
+  {
+    "url": "https://docs.shakecursor.local/selection",
+    "title": "Context and Selection Capture",
+    "content": "When the overlay is activated, Shake Cursor captures the current state of the page to provide context to the AI model. This includes the current URL, the page title, and most importantly, any text or elements the user has recently interacted with. If the user has text highlighted, that text is sent as the primary context. If nothing is highlighted, the SDK looks for the element under the cursor or the last clicked element. Developers can control what information is sent to the AI. Use the `data-ai-private` attribute to prevent specific elements from being captured. This is essential for protecting user PII (Personally Identifiable Information). Additionally, you can use `data-ai-overlay-ignore` to exclude decorative elements or navigation menus from the context. The SDK also provides `allowedSelectors` to white-list specific parts of your DOM for indexing and context capture."
+  },
+  {
+    "url": "https://docs.shakecursor.local/rag",
+    "title": "Retrieval Augmented Generation (RAG)",
+    "content": "Retrieval Augmented Generation, or RAG, is a technique used to give LLMs access to specific, up-to-date information without retraining the model. In Shake Cursor, RAG is used to provide the AI with knowledge about your specific website. When a user asks a question, the backend searches through your indexed content to find the most relevant 'chunks' of information. These chunks are then prepended to the user's prompt, giving the model the necessary context to answer accurately. The indexing process involves breaking your site's pages into small pieces, generating vector embeddings for each piece, and storing them in a vector database. When a query comes in, we generate an embedding for the query and perform a similarity search. This ensures that the AI's responses are grounded in your site's actual documentation, reducing 'hallucinations'."
+  },
+  {
+    "url": "https://docs.shakecursor.local/security",
+    "title": "Security and Privacy",
+    "content": "Security is a top priority for Shake Cursor. Because the SDK captures page content, it's vital to ensure that sensitive data is never sent to the backend. As mentioned in the selection capture documentation, developers should use `data-ai-private` on any input fields, profile sections, or financial data. On the server side, all requests must be authenticated with a valid site key. We recommend using environment variables to store your secret keys and never exposing them in the client-side code. If you are using a custom model endpoint, ensure it is protected by HTTPS and has proper rate limiting. Shake Cursor also supports local models via Ollama, allowing you to keep all your data on-premise if required. This is a great option for enterprise users with strict data residency requirements."
+  }
+]

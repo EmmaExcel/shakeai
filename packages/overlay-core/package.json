@@ -1,0 +1,24 @@
+{
+  "name": "@shakecursor/overlay-core",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/overlay.global.js",
+  "module": "./dist/overlay.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/overlay.js",
+      "default": "./dist/overlay.global.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "vite build --config vite.config.ts && tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "vite": "^8.0.12",
+    "typescript": "~6.0.2"
+  }
+}
