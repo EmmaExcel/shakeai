@@ -6,9 +6,9 @@
       "*"
     ],
     "model": {
-      "provider": "openrouter",
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "qwen/qwen3-coder:free"
+      "provider": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "model": "gemini-2.5-flash"
     },
     "rag": {
       "enabled": true,
@@ -23,9 +23,9 @@
       "*"
     ],
     "model": {
-      "provider": "openrouter",
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "qwen/qwen3-coder:free"
+      "provider": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "model": "gemini-2.5-flash"
     },
     "rag": {
       "enabled": false,
@@ -40,9 +40,9 @@
       "*"
     ],
     "model": {
-      "provider": "openrouter",
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "qwen/qwen3-coder:free"
+      "provider": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "model": "gemini-2.5-flash"
     },
     "rag": {
       "enabled": false,
@@ -57,9 +57,9 @@
       "*"
     ],
     "model": {
-      "provider": "openrouter",
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "qwen/qwen3-coder:free"
+      "provider": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "model": "gemini-2.5-flash"
     },
     "rag": {
       "enabled": false,
@@ -74,9 +74,9 @@
       "*"
     ],
     "model": {
-      "provider": "openrouter",
-      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-      "model": "qwen/qwen3-coder:free"
+      "provider": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "model": "gemini-2.5-flash"
     },
     "rag": {
       "enabled": false,

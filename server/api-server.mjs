@@ -12,6 +12,8 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER ?? 'https://shakecursor.com'
 const OPENROUTER_APP_TITLE = process.env.OPENROUTER_APP_TITLE ?? 'Shake Cursor SDK'
 const DEFAULT_OPENROUTER_MODEL = 'qwen/qwen3-coder:free'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GEMINI_MODEL = 'gemini-2.5-flash'
 
 function sendJson(response, status, body, origin = '*') {
   response.writeHead(status, {
@@ -240,6 +242,58 @@ async function callOpenRouter(modelConfig, prompt) {
   return data.choices?.[0]?.message?.content?.trim() || "I'm sorry, I couldn't generate a response."
 }
 
+async function callGemini(modelConfig, prompt) {
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is required for Gemini model routing')
+  }
+
+  const model = modelConfig.model ?? GEMINI_MODEL
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY,
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [
+            {
+              text:
+                'You are a contextual AI assistant embedded on a website. Use selected page context first, then relevant site knowledge. If the retrieved site knowledge is not enough, say what is missing.',
+            },
+          ],
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      }),
+    },
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(
+      data.error?.message ??
+        data.error?.status ??
+        `Gemini returned ${response.status}`,
+    )
+  }
+
+  const parts = data.candidates?.[0]?.content?.parts ?? []
+  const text = parts.map((part) => part.text ?? '').join('').trim()
+  return text || "I'm sorry, I couldn't generate a response."
+}
+
 async function callCustom(model, payload, chunks) {
   const response = await fetch(model.endpoint, {
     method: 'POST',
@@ -302,6 +356,8 @@ async function handleAsk(request, response, origin) {
       ? await callCustom(site.model, payload, chunks)
       : site.model.provider === 'ollama'
         ? await callOllama(site.model, prompt)
+        : site.model.provider === 'gemini'
+          ? await callGemini(site.model, prompt)
         : await callOpenRouter(site.model, prompt)
 
   await logQuery({
@@ -345,9 +401,9 @@ async function handleAdminSites(request, response, origin) {
       name: payload.name,
       allowedOrigins: Array.isArray(payload.allowedOrigins) ? payload.allowedOrigins : ['*'],
       model: payload.model || {
-        provider: 'openrouter',
-        endpoint: 'https://openrouter.ai/api/v1/chat/completions',
-        model: DEFAULT_OPENROUTER_MODEL,
+        provider: 'gemini',
+        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        model: GEMINI_MODEL,
       },
       rag: payload.rag || {
         enabled: false,
