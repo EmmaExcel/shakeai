@@ -313,11 +313,20 @@
   justify-content: flex-end;
 }
 
-.tag {
-  background: rgba(17, 24, 39, 0.05);
-  padding: 2px 6px;
-  border-radius: 4px;
+.edit-link {
+  background: none;
+  border: none;
+  color: var(--primary);
   font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.edit-link:hover {
+  opacity: 1;
 }
 
 .query-list {

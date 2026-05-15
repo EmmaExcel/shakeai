@@ -141,6 +141,31 @@ export function Admin() {
     }
   }
 
+  const updateOrigins = async () => {
+    if (!selectedSite) return
+    const current = selectedSite.allowedOrigins.join(', ')
+    const next = prompt('Enter Allowed Origins (comma separated):', current)
+    if (next === null || next === current) return
+
+    const origins = next.split(',').map(o => o.trim()).filter(Boolean)
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/sites/${selectedKey}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ADMIN_TOKEN}`
+        },
+        body: JSON.stringify({ allowedOrigins: origins }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update origins')
+      await fetchSites()
+    } catch (error) {
+      alert('Failed to update configuration')
+    }
+  }
+
   const selectedSite = sites[selectedKey]
 
   if (loading) return <div className="admin-loading">Loading configuration...</div>
@@ -205,7 +230,7 @@ AIOverlay.init({
                     <span>{selectedSite.rag.enabled ? 'Enabled' : 'Disabled'}</span>
                   </div>
                   <div className="config-row">
-                    <label>Allowed Origins:</label>
+                    <label>Allowed Origins: <button className="edit-link" onClick={updateOrigins}>Edit</button></label>
                     <div className="tag-cloud">
                       {selectedSite.allowedOrigins.map((o) => (
                         <span key={o} className="tag">{o}</span>
