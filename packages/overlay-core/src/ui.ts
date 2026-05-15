@@ -25,7 +25,14 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
   host.dataset.aiOverlayRoot = 'true'
   const globalStyle = document.createElement('style')
   globalStyle.dataset.aiOverlayStyle = 'true'
-  globalStyle.textContent = 'body.ai-overlay-active { cursor: crosshair; }'
+  globalStyle.textContent = `
+    body.ai-overlay-active { 
+      cursor: none !important; 
+    }
+    body.ai-overlay-active * { 
+      cursor: none !important; 
+    }
+  `
   const shadow = host.attachShadow({ mode: 'open' })
   document.head.append(globalStyle)
   document.body.append(host)
@@ -34,11 +41,46 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
     <style>
       :host {
         all: initial;
+        --ai-blue: #4285F4;
+        --ai-red: #DB4437;
+        --ai-yellow: #F4B400;
+        --ai-green: #0F9D58;
         --ai-primary: ${options.theme.primaryColor};
         --ai-panel: ${options.theme.panelBackground};
         --ai-text: ${options.theme.textColor};
         --ai-radius: ${options.theme.borderRadius}px;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .custom-cursor {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 24px;
+        height: 24px;
+        pointer-events: none;
+        z-index: 2147483647;
+        display: none;
+        transform: translate(-50%, -50%);
+        transition: transform 0.1s ease-out;
+      }
+
+      .custom-cursor.active {
+        display: block;
+      }
+
+      .cursor-dot {
+        width: 100%;
+        height: 100%;
+        background: conic-gradient(var(--ai-blue), var(--ai-red), var(--ai-yellow), var(--ai-green), var(--ai-blue));
+        border-radius: 50%;
+        box-shadow: 0 0 15px rgba(66, 133, 244, 0.8), 0 0 30px rgba(15, 157, 88, 0.4);
+        animation: rotate-gradient 2s linear infinite;
+      }
+
+      @keyframes rotate-gradient {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
 
       .toast {
@@ -82,11 +124,15 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
         z-index: 2147483644;
         pointer-events: none;
         display: none;
-        border: 2px solid var(--ai-primary);
+        border: 2px solid transparent;
         border-radius: var(--ai-radius);
+        background: linear-gradient(var(--ai-panel), var(--ai-panel)) padding-box,
+                    conic-gradient(var(--ai-blue), var(--ai-red), var(--ai-yellow), var(--ai-green), var(--ai-blue)) border-box;
         box-shadow:
-          0 0 0 4px color-mix(in srgb, var(--ai-primary), transparent 88%),
+          0 0 20px color-mix(in srgb, var(--ai-blue), transparent 80%),
           0 20px 52px rgba(15, 23, 42, 0.14);
+        opacity: 0.3;
+        transition: all 0.15s ease-out;
       }
 
       .panel {
@@ -119,7 +165,7 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
       .kind {
         display: block;
         margin-bottom: 4px;
-        color: var(--ai-primary);
+        color: var(--ai-blue);
         font: 800 11px/1 Inter, ui-sans-serif, system-ui, sans-serif;
         text-transform: uppercase;
       }
@@ -174,8 +220,8 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
       }
 
       textarea:focus {
-        border-color: var(--ai-primary);
-        outline: 3px solid color-mix(in srgb, var(--ai-primary), transparent 86%);
+        border-color: var(--ai-blue);
+        outline: 3px solid color-mix(in srgb, var(--ai-blue), transparent 86%);
       }
 
       .error,
@@ -220,6 +266,9 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
         100% { box-shadow: 0 0 0 0 transparent; }
       }
     </style>
+    <div class="custom-cursor">
+      <div class="cursor-dot"></div>
+    </div>
     <div class="toast" role="status">
       <span class="pulse"></span>
       <span>AI mode active</span>
@@ -243,6 +292,7 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
     </section>
   `
 
+  const cursor = shadow.querySelector<HTMLElement>('.custom-cursor')
   const toast = shadow.querySelector<HTMLElement>('.toast')
   const count = shadow.querySelector<HTMLElement>('.count')
   const hover = shadow.querySelector<HTMLElement>('.hover')
@@ -256,8 +306,13 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
   const error = shadow.querySelector<HTMLElement>('.error')
   const answer = shadow.querySelector<HTMLElement>('.answer')
 
-  if (!toast || !count || !hover || !panel || !kind || !label || !form || !textarea || !submit || !close || !error || !answer) {
+  if (!cursor || !toast || !count || !hover || !panel || !kind || !label || !form || !textarea || !submit || !close || !error || !answer) {
     throw new Error('AIOverlay UI failed to initialize')
+  }
+
+  const onMouseMove = (e: MouseEvent) => {
+    cursor.style.left = `${e.clientX}px`
+    cursor.style.top = `${e.clientY}px`
   }
 
   form.addEventListener('submit', (event) => {
@@ -277,7 +332,14 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
     contains: (element) => element === host || host.contains(element),
     setActive: (active, shakeCount) => {
       toast.classList.toggle('active', active)
+      cursor.classList.toggle('active', active)
       count.textContent = `shakes ${shakeCount}`
+      
+      if (active) {
+        window.addEventListener('mousemove', onMouseMove)
+      } else {
+        window.removeEventListener('mousemove', onMouseMove)
+      }
     },
     setHoverRect: (rect) => {
       if (!rect) {
@@ -327,6 +389,7 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
     destroy: () => {
       globalStyle.remove()
       host.remove()
+      window.removeEventListener('mousemove', onMouseMove)
     },
   }
 }

@@ -7,6 +7,8 @@ export type AIOverlaySelection = {
   rect: DOMRect
   url: string
   title: string
+  data?: string
+  mimeType?: string
 }
 
 export type AIOverlayAskPayload = {

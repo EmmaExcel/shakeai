@@ -242,12 +242,24 @@ async function callOpenRouter(modelConfig, prompt) {
   return data.choices?.[0]?.message?.content?.trim() || "I'm sorry, I couldn't generate a response."
 }
 
-async function callGemini(modelConfig, prompt) {
+async function callGemini(modelConfig, payload, prompt) {
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is required for Gemini model routing')
   }
 
   const model = modelConfig.model ?? GEMINI_MODEL
+  const parts = [{ text: prompt }]
+
+  // Add image data if present (multimodal)
+  if (payload.selection?.kind === 'image' && payload.selection.data && payload.selection.mimeType) {
+    parts.push({
+      inlineData: {
+        mimeType: payload.selection.mimeType,
+        data: payload.selection.data,
+      },
+    })
+  }
+
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
@@ -261,18 +273,14 @@ async function callGemini(modelConfig, prompt) {
           parts: [
             {
               text:
-                'You are a contextual AI assistant embedded on a website. Use selected page context first, then relevant site knowledge. If the retrieved site knowledge is not enough, say what is missing.',
+                'You are a contextual AI assistant embedded on a website. Use selected page context first, then relevant site knowledge. If an image is provided, describe it accurately. If the retrieved site knowledge is not enough, say what is missing.',
             },
           ],
         },
         contents: [
           {
             role: 'user',
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
+            parts,
           },
         ],
       }),
@@ -289,8 +297,8 @@ async function callGemini(modelConfig, prompt) {
     )
   }
 
-  const parts = data.candidates?.[0]?.content?.parts ?? []
-  const text = parts.map((part) => part.text ?? '').join('').trim()
+  const responseParts = data.candidates?.[0]?.content?.parts ?? []
+  const text = responseParts.map((part) => part.text ?? '').join('').trim()
   return text || "I'm sorry, I couldn't generate a response."
 }
 
@@ -357,7 +365,7 @@ async function handleAsk(request, response, origin) {
       : site.model.provider === 'ollama'
         ? await callOllama(site.model, prompt)
         : site.model.provider === 'gemini'
-          ? await callGemini(site.model, prompt)
+          ? await callGemini(site.model, payload, prompt)
         : await callOpenRouter(site.model, prompt)
 
   await logQuery({

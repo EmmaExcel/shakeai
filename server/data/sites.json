@@ -16,60 +16,9 @@
       "indexPath": "./server/data/demo-docs.vectors.json"
     }
   },
-  "pk_a1996af7dff13583ac31019237f23a9b": {
-    "siteId": "blog-rag",
-    "name": "External Blog",
-    "allowedOrigins": [
-      "*"
-    ],
-    "model": {
-      "provider": "gemini",
-      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      "model": "gemini-2.5-flash"
-    },
-    "rag": {
-      "enabled": false,
-      "topK": 4,
-      "indexPath": "./server/data/demo-docs.vectors.json"
-    }
-  },
-  "pk_95d37bc15886d484aa73a1d91f7d1d3e": {
-    "siteId": "hardening-test",
-    "name": "Hardening Test",
-    "allowedOrigins": [
-      "*"
-    ],
-    "model": {
-      "provider": "gemini",
-      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      "model": "gemini-2.5-flash"
-    },
-    "rag": {
-      "enabled": false,
-      "topK": 4,
-      "indexPath": "./server/data/demo-docs.vectors.json"
-    }
-  },
-  "pk_9460cfbc2a0198ef28cd03a4e3da95a0": {
-    "siteId": "new-site",
-    "name": "Atomic Test",
-    "allowedOrigins": [
-      "*"
-    ],
-    "model": {
-      "provider": "gemini",
-      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      "model": "gemini-2.5-flash"
-    },
-    "rag": {
-      "enabled": false,
-      "topK": 4,
-      "indexPath": "./server/data/demo-docs.vectors.json"
-    }
-  },
-  "pk_7cc290ba76cfc8546ee6617b813deaf2": {
-    "siteId": "atomic-test-2",
-    "name": "Atomic Test 2",
+  "pk_486aae357c957af883fc23389b6e221c": {
+    "siteId": "portfolio",
+    "name": "portfolio",
     "allowedOrigins": [
       "*"
     ],

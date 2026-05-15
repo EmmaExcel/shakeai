@@ -41,6 +41,8 @@ function describeElement(element: HTMLElement) {
 
   return {
     label: descriptor ? `${tag}: ${descriptor.slice(0, 64)}` : tag,
+    data: undefined,
+    mimeType: undefined,
     content: [
       `Selected element: <${tag}>`,
       aria ? `ARIA label: ${aria}` : '',
@@ -56,8 +58,30 @@ function describeImage(image: HTMLImageElement) {
   const src = image.currentSrc || image.src
   const alt = image.alt || 'No alt text'
 
+  // Attempt to capture image data for Vision
+  let data: string | undefined
+  let mimeType: string | undefined
+
+  try {
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      ctx.drawImage(image, 0, 0)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+      const [header, base64] = dataUrl.split(',')
+      data = base64
+      mimeType = header.split(':')[1].split(';')[0]
+    }
+  } catch (e) {
+    console.warn('Failed to capture image data (likely CORS):', e)
+  }
+
   return {
     label: `image: ${alt.slice(0, 64)}`,
+    data,
+    mimeType,
     content: [
       'Selected image',
       `Alt text: ${alt}`,
@@ -165,6 +189,8 @@ export function createSelectionController(options: SelectionControllerOptions) {
       kind: image ? 'image' : 'element',
       label: details.label,
       content: details.content,
+      data: details.data,
+      mimeType: details.mimeType,
       ...baseSelection(rect),
     })
   }

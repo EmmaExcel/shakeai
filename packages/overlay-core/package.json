@@ -1,6 +1,6 @@
 {
   "name": "@emmaexcel/shakecursor",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Framework-agnostic browser SDK for contextual AI selection overlays.",
   "type": "module",
   "main": "./dist/overlay.global.js",
