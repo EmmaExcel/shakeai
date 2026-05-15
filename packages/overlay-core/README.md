@@ -5,7 +5,7 @@ Framework-agnostic browser SDK for contextual AI selection overlays.
 ## NPM-style usage
 
 ```ts
-import { AIOverlay } from '@shakecursor/overlay-core'
+import { AIOverlay } from '@emmaexcel/shakecursor'
 
 const overlay = AIOverlay.init({
   siteKey: 'pk_demo_shakecursor',
