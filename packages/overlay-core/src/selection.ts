@@ -1,5 +1,6 @@
 import type { AIOverlaySelection, AIOverlaySelectionConfig } from './types'
 import { matchesAnySelector, normalizeText } from './utils'
+import { buildUniqueSelector, collectElementContext } from './editor'
 
 export type SelectionControllerOptions = {
   config: Required<AIOverlaySelectionConfig>
@@ -239,6 +240,7 @@ export function createSelectionController(options: SelectionControllerOptions) {
 
     const details = image ? await describeImage(image) : describeElement(target)
     const rect = image ? image.getBoundingClientRect() : target.getBoundingClientRect()
+    const actualEl = image ?? target
 
     options.onSelection({
       kind: image ? 'image' : 'element',
@@ -248,6 +250,9 @@ export function createSelectionController(options: SelectionControllerOptions) {
       mimeType: details.mimeType,
       alt: (details as any).alt,
       source: (details as any).source,
+      element: actualEl,
+      cssSelector: buildUniqueSelector(actualEl),
+      computedStyles: collectElementContext(actualEl),
       ...baseSelection(rect),
     })
   }

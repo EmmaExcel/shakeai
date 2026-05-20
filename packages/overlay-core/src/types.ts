@@ -16,8 +16,22 @@ export interface AIOverlaySelection {
   height?: number
   alt?: string
   source?: string
+  // Edit mode: reference to the original DOM element
+  element?: HTMLElement
+  // Edit mode: computed styles snapshot for context
+  computedStyles?: Record<string, string>
+  // Edit mode: generated unique CSS selector for this element
+  cssSelector?: string
 }
 export type SelectionData = AIOverlaySelection
+
+// ==================== Edit Types ====================
+
+export interface AIOverlayEditResult {
+  selector: string
+  css: Record<string, string>
+  description: string
+}
 
 // ==================== Event Callbacks ====================
 
@@ -212,6 +226,8 @@ export interface AIOverlayConfig {
   trigger?: AIOverlayTriggerConfig
   selection?: AIOverlaySelectionConfig
   theme?: AIOverlayThemeConfig
+  /** Enable AI Edit Mode — lets users ask the AI to apply live CSS changes to elements */
+  editEnabled?: boolean
   analytics?: {
     enabled?: boolean
   }
@@ -222,6 +238,7 @@ export interface AIOverlayConfig {
   onResponse?: (response: string, payload: AIOverlayAskPayload) => void
   onError?: (error: Error) => void
   onInspect?: (result: AIOverlayInspectElementResult) => void
+  onEdit?: (result: AIOverlayEditResult) => void
 }
 
 export interface AIOverlayInstance {

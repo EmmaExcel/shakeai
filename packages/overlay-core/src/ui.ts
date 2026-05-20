@@ -3,8 +3,11 @@ import { clamp } from './utils'
 
 type OverlayUIOptions = {
   theme: AIOverlayThemeConfig & Required<Pick<AIOverlayThemeConfig, 'primaryColor' | 'panelBackground' | 'textColor' | 'borderRadius'>>
-  onSubmit: (question: string) => void
+  editEnabled: boolean
+  onSubmit: (question: string, inEditMode: boolean) => void
   onCancel: () => void
+  onUndo: () => void
+  onCopyCSS: () => void
 }
 
 export type OverlayUI = {
@@ -19,6 +22,7 @@ export type OverlayUI = {
   clearSelection: () => void
   destroy: () => void
   setInspectMode: (active: boolean, element?: Element | null) => void
+  showEditControls: (canUndo: boolean) => void
 }
 
 export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
@@ -392,6 +396,67 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
       margin-bottom: 4px;
     }
 
+    /* Edit Mode Toggle */
+    .edit-mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ai-text-muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .edit-mode-toggle:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .edit-mode-toggle.active {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .edit-controls {
+      display: none;
+      gap: 8px;
+      padding: 8px 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .edit-controls.visible {
+      display: flex;
+    }
+
+    .edit-btn {
+      flex: 1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: var(--ai-text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .edit-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--ai-text);
+    }
+
+    .edit-btn.undo { border-color: rgba(251, 191, 36, 0.3); color: #fbbf24; }
+    .edit-btn.undo:hover { background: rgba(251, 191, 36, 0.1); }
+    .edit-btn.copy { border-color: rgba(99, 102, 241, 0.3); color: #818cf8; }
+    .edit-btn.copy:hover { background: rgba(99, 102, 241, 0.1); }
+
     @media (max-width: 450px) {
       .panel {
         width: calc(100vw - 32px);
@@ -422,7 +487,10 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
           <span class="kind"></span>
           <strong class="label"></strong>
         </div>
-        <button class="close" type="button" aria-label="Close">×</button>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${options.editEnabled ? `<button class="edit-mode-toggle" type="button" title="Toggle Edit Mode">✏️ Edit</button>` : ''}
+          <button class="close" type="button" aria-label="Close">×</button>
+        </div>
       </header>
 
       <div class="content-area">
@@ -430,9 +498,14 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
         <p class="error"></p>
       </div>
 
+      <div class="edit-controls">
+        <button class="edit-btn undo" type="button">↩ Undo</button>
+        <button class="edit-btn copy" type="button">📋 Copy CSS</button>
+      </div>
+
       <footer class="footer">
         <form>
-          <textarea placeholder="Ask anything about this selection... (Ctrl+I for inspect element)"></textarea>
+          <textarea placeholder="Ask anything about this selection..."></textarea>
           <button class="submit" type="submit">Ask AI</button>
         </form>
       </footer>
@@ -452,10 +525,30 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
   const close = shadow.querySelector<HTMLButtonElement>('.close')
   const error = shadow.querySelector<HTMLElement>('.error')
   const answer = shadow.querySelector<HTMLElement>('.answer')
+  const editToggle = shadow.querySelector<HTMLButtonElement>('.edit-mode-toggle')
+  const editControls = shadow.querySelector<HTMLElement>('.edit-controls')
+  const undoBtn = shadow.querySelector<HTMLButtonElement>('.edit-btn.undo')
+  const copyBtn = shadow.querySelector<HTMLButtonElement>('.edit-btn.copy')
 
   if (!cursor || !toast || !count || !hover || !panel || !kind || !label || !form || !textarea || !submit || !close || !error || !answer) {
     throw new Error('AIOverlay UI failed to initialize')
   }
+
+  let inEditMode = false
+
+  const setEditMode = (active: boolean) => {
+    inEditMode = active
+    editToggle?.classList.toggle('active', active)
+    submit.textContent = active ? '✏️ Apply Edit' : 'Ask AI'
+    textarea.placeholder = active
+      ? 'Describe the change (e.g. "make background white, text smaller")'
+      : 'Ask anything about this selection...'
+  }
+
+  editToggle?.addEventListener('click', () => setEditMode(!inEditMode))
+
+  undoBtn?.addEventListener('click', () => options.onUndo())
+  copyBtn?.addEventListener('click', () => options.onCopyCSS())
 
   const onMouseMove = (e: MouseEvent) => {
     cursor.style.left = `${e.clientX}px`
@@ -466,7 +559,7 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
     event.preventDefault()
     const question = textarea.value.trim()
     if (question) {
-      options.onSubmit(question)
+      options.onSubmit(question, inEditMode)
     }
   })
 
@@ -506,9 +599,10 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
 
       textarea.value = ''
       submit.disabled = false
-      submit.textContent = 'Ask AI'
+      submit.textContent = inEditMode ? '✏️ Apply Edit' : 'Ask AI'
       error.classList.remove('visible')
       answer.textContent = ''
+      editControls?.classList.remove('visible')
       
       // Smart Absolute Positioning relative to selection
       const left = clamp(selection.rect.left + selection.rect.width / 2 - 190, 16, window.innerWidth - 396)
@@ -534,7 +628,7 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
     },
     setThinking: (thinking) => {
       submit.disabled = thinking
-      submit.textContent = thinking ? 'Analyzing...' : 'Ask AI'
+      submit.textContent = thinking ? 'Analyzing...' : (inEditMode ? '✏️ Apply Edit' : 'Ask AI')
     },
     setAnswer: (value) => {
       answer.textContent = value
@@ -548,6 +642,7 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
       error.classList.remove('visible')
       answer.textContent = ''
       textarea.value = ''
+      editControls?.classList.remove('visible')
       // Remove vision badge on clear
       const kindEl = kind as HTMLElement
       const existingBadge = kindEl.querySelector('.vision-badge')
@@ -580,6 +675,12 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
           panel.classList.remove('inspect-mode')
           textarea.focus()
         }
+      }
+    },
+    showEditControls: (canUndo) => {
+      if (editControls) {
+        editControls.classList.add('visible')
+        if (undoBtn) undoBtn.disabled = !canUndo
       }
     },
   }

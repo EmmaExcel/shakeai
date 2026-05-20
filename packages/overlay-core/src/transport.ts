@@ -1,4 +1,4 @@
-import type { AIOverlayAskPayload, AIOverlayModelConfig } from './types'
+import type { AIOverlayAskPayload, AIOverlayEditResult, AIOverlayModelConfig } from './types'
 
 const DEFAULT_OLLAMA_ENDPOINT = 'http://localhost:11434/api/chat'
 const DEFAULT_MODEL = 'qwen3-coder:480b-cloud'
@@ -346,4 +346,101 @@ export async function askVision(
 function extractMimeType(header: string): string {
   const parts = header.split(';')
   return parts[0].split('/')[1] || 'jpeg'
+}
+
+/**
+ * Ask the AI model to generate CSS edits for a given element.
+ * The model is prompted with structured JSON output format.
+ */
+export async function askEdit(
+  config: AIOverlayModelConfig,
+  elementContext: {
+    selector: string
+    tagName: string
+    classes: string
+    computedStyles: Record<string, string>
+    innerTextSnippet: string
+  },
+  userRequest: string
+): Promise<AIOverlayEditResult> {
+  const endpoint = config.endpoint ?? DEFAULT_OLLAMA_ENDPOINT
+  const model = config.model ?? DEFAULT_MODEL
+  const isOpenAI = endpoint.includes('/chat/completions') || endpoint.includes('/v1/chat')
+
+  const systemPrompt = `You are a CSS expert and web design assistant integrated into a browser AI overlay.
+Your job is to translate natural language style requests into valid CSS property changes.
+
+You MUST respond with ONLY a single valid JSON object in this exact format (no markdown, no explanation):
+{
+  "selector": "<the CSS selector provided>",
+  "css": {
+    "property-name": "value",
+    "another-property": "value"
+  },
+  "description": "<one sentence describing what changed>"
+}
+
+Rules:
+- Only include CSS properties that need to change
+- Use standard CSS property names (kebab-case)
+- Use valid CSS values only
+- Keep changes minimal and precise
+- Do NOT include !important in values (the SDK adds it)
+- Do NOT wrap in markdown code blocks`
+
+  const userPrompt = `Element details:
+- Selector: ${elementContext.selector}
+- Tag: ${elementContext.tagName}
+- Classes: ${elementContext.classes || 'none'}
+- Text snippet: "${elementContext.innerTextSnippet}"
+
+Current computed styles:
+${Object.entries(elementContext.computedStyles)
+  .map(([k, v]) => `  ${k}: ${v}`)
+  .join('\n')}
+
+User request: "${userRequest}"
+
+Respond with the JSON edit object only.`
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+  ]
+
+  let rawText: string
+
+  if (isOpenAI || config.provider === 'custom') {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(config.headers ?? {}) },
+      body: JSON.stringify({ model, messages }),
+    })
+    if (!response.ok) throw new Error(`Edit model returned ${response.status}`)
+    const data: any = await response.json()
+    rawText = data.choices?.[0]?.message?.content ?? ''
+  } else {
+    // Ollama format
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(config.headers ?? {}) },
+      body: JSON.stringify({ model, stream: false, messages }),
+    })
+    if (!response.ok) throw new Error(`Edit model returned ${response.status}`)
+    const data: OllamaResponse = await response.json()
+    rawText = data.message?.content ?? ''
+  }
+
+  // Strip markdown code fences if model wraps them
+  rawText = rawText.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim()
+
+  try {
+    const parsed: AIOverlayEditResult = JSON.parse(rawText)
+    if (!parsed.selector || !parsed.css || typeof parsed.css !== 'object') {
+      throw new Error('Invalid edit result shape')
+    }
+    return parsed
+  } catch {
+    throw new Error(`AI returned invalid edit JSON: ${rawText.slice(0, 200)}`)
+  }
 }

@@ -1,6 +1,7 @@
 import { createSelectionController } from './selection'
 import { createShakeDetector } from './shake'
-import { askHostedApi, askModel, askVision } from './transport'
+import { askHostedApi, askModel, askVision, askEdit } from './transport'
+import { buildUniqueSelector, collectElementContext, applyEdit, undoEdit, canUndo, exportGeneratedCSS } from './editor'
 import type {
   AIOverlayConfig,
   AIOverlayInspectElementResult,
@@ -56,6 +57,7 @@ class AIOverlayController implements AIOverlayInstance {
   private shakeCount = 0
   private selection: AIOverlaySelection | null = null
   private inspectMode = false
+  private editMode = false
   private disposers: Array<() => void> = []
   private ui: ReturnType<typeof createOverlayUI>
   private config: AIOverlayConfig
@@ -68,8 +70,13 @@ class AIOverlayController implements AIOverlayInstance {
 
     this.ui = createOverlayUI({
       theme: { ...defaultTheme, ...config.theme } as any,
-      onSubmit: (question) => {
-        void this.ask(question)
+      editEnabled: config.editEnabled ?? false,
+      onSubmit: (question, inEditMode) => {
+        if (inEditMode) {
+          void this.applyAIEdit(question)
+        } else {
+          void this.ask(question)
+        }
       },
       onCancel: () => {
         this.clearSelection()
@@ -78,6 +85,16 @@ class AIOverlayController implements AIOverlayInstance {
         }
 
         this.deactivateInspectMode()
+      },
+      onUndo: () => {
+        const msg = undoEdit()
+        if (msg) this.ui.setAnswer(msg)
+      },
+      onCopyCSS: () => {
+        const css = exportGeneratedCSS()
+        navigator.clipboard.writeText(css).then(() => {
+          this.ui.setAnswer('CSS copied to clipboard!')
+        })
       },
     })
 
@@ -219,6 +236,48 @@ class AIOverlayController implements AIOverlayInstance {
       this.config.onResponse?.(response, payload)
     } catch (caughtError) {
       const error = caughtError instanceof Error ? caughtError : new Error('Unknown AIOverlay error')
+      this.ui.setError(error.message)
+      this.config.onError?.(error)
+    } finally {
+      this.ui.setThinking(false)
+    }
+  }
+
+  private async applyAIEdit(request: string) {
+    if (!this.selection) return
+
+    const el = this.selection.element
+    if (!el) {
+      this.ui.setError('No element selected for editing.')
+      return
+    }
+
+    this.ui.setThinking(true)
+    this.ui.setAnswer('')
+    this.ui.setError('')
+
+    try {
+      const selector = this.selection.cssSelector ?? buildUniqueSelector(el)
+      const computedStyles = this.selection.computedStyles ?? collectElementContext(el)
+
+      const editResult = await askEdit(
+        this.config.model ?? {},
+        {
+          selector,
+          tagName: el.tagName.toLowerCase(),
+          classes: el.className || '',
+          computedStyles,
+          innerTextSnippet: (el.innerText ?? '').slice(0, 200),
+        },
+        request
+      )
+
+      applyEdit(editResult)
+      this.ui.setAnswer(`✅ ${editResult.description}`)
+      this.ui.showEditControls(canUndo())
+      this.config.onEdit?.(editResult)
+    } catch (caughtError) {
+      const error = caughtError instanceof Error ? caughtError : new Error('Edit failed')
       this.ui.setError(error.message)
       this.config.onError?.(error)
     } finally {
