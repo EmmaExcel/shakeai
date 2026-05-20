@@ -21,22 +21,46 @@ export async function askModel(config: AIOverlayModelConfig, payload: AIOverlayA
 
   // Custom endpoint handling
   if (provider === 'custom') {
+    const isOpenAI = endpoint.includes('/chat/completions') || endpoint.includes('/v1/chat')
+    let requestBody: any
+    if (isOpenAI) {
+      requestBody = {
+        model: config.model || model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an in-page AI assistant. Use the selected website context to answer or transform content. Be direct and practical.',
+          },
+          {
+            role: 'user',
+            content: buildUserMessage(payload),
+          },
+        ],
+      }
+    } else {
+      requestBody = payload
+    }
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...config.headers,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(requestBody),
     })
 
     if (!response.ok) {
       throw new Error(`Custom endpoint returned ${response.status}`)
     }
 
-    const data: unknown = await response.json()
+    const data: any = await response.json()
     if (typeof data === 'string') {
       return data
+    }
+
+    if (data && typeof data === 'object' && data.choices?.[0]?.message?.content) {
+      return data.choices[0].message.content.trim()
     }
 
     if (data && typeof data === 'object' && 'answer' in data && typeof data.answer === 'string') {
@@ -208,6 +232,65 @@ export async function askVision(
     }
 
     return data.message?.content?.trim() || 'No response returned.'
+  }
+
+  const isOpenAI = (config.provider === 'custom' && (effectiveEndpoint.includes('/chat/completions') || effectiveEndpoint.includes('/v1/chat')))
+
+  if (isOpenAI) {
+    let base64Url = ''
+    if (payload.selection.data) {
+      if (payload.selection.data.startsWith('data:')) {
+        base64Url = payload.selection.data
+      } else {
+        const mime = payload.selection.mimeType || 'image/png'
+        base64Url = `data:${mime};base64,${payload.selection.data}`
+      }
+    }
+
+    const promptText = [
+      `Image Analysis Request`,
+      payload.question ? `Question: ${payload.question}` : '',
+      `Page title: ${payload.selection.title}`,
+      `Page URL: ${payload.selection.url}`,
+    ].filter(Boolean).join('\n')
+
+    const response = await fetch(effectiveEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config.headers || {}),
+      },
+      body: JSON.stringify({
+        model: effectiveModel,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: promptText,
+              },
+              base64Url ? {
+                type: 'image_url',
+                image_url: {
+                  url: base64Url,
+                },
+              } : null,
+            ].filter(Boolean),
+          },
+        ],
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`OpenAI Vision API returned ${response.status}`)
+    }
+
+    const data = await response.json() as any
+    if (data.choices?.[0]?.message?.content) {
+      return data.choices[0].message.content.trim()
+    }
+    throw new Error('OpenAI Vision model returned unexpected format')
   }
 
   // For REST APIs that support images (GPT, Claude, etc.)
