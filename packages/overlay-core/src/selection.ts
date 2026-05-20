@@ -54,44 +54,88 @@ function describeElement(element: HTMLElement) {
   }
 }
 
-function describeImage(image: HTMLImageElement) {
+function describeImage(image: HTMLImageElement): Promise<{
+  label: string
+  data: string | undefined
+  mimeType: string | undefined
+  alt: string
+  source: string
+  content: string
+}> {
   const src = image.currentSrc || image.src
   const alt = image.alt || 'No alt text'
 
-  // Attempt to capture image data for Vision
-  let data: string | undefined
-  let mimeType: string | undefined
-
-  try {
-    const canvas = document.createElement('canvas')
-    canvas.width = image.naturalWidth
-    canvas.height = image.naturalHeight
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      ctx.drawImage(image, 0, 0)
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
-      const [header, base64] = dataUrl.split(',')
-      data = base64
-      mimeType = header.split(':')[1].split(';')[0]
+  return new Promise((resolve) => {
+    const result = {
+      label: `image: ${alt.slice(0, 64)}`,
+      data: undefined as string | undefined,
+      mimeType: undefined as string | undefined,
+      alt,
+      source: src,
+      content: [
+        'Selected image',
+        `Alt text: ${alt}`,
+        `Source: ${src}`,
+        `Rendered size: ${Math.round(image.width)}x${Math.round(image.height)}`,
+        `Natural size: ${image.naturalWidth}x${image.naturalHeight}`,
+      ].join('\n'),
     }
-  } catch (e) {
-    console.warn('Failed to capture image data (likely CORS):', e)
-  }
 
-  return {
-    label: `image: ${alt.slice(0, 64)}`,
-    data,
-    mimeType,
-    alt,
-    source: src,
-    content: [
-      'Selected image',
-      `Alt text: ${alt}`,
-      `Source: ${src}`,
-      `Rendered size: ${Math.round(image.width)}x${Math.round(image.height)}`,
-      `Natural size: ${image.naturalWidth}x${image.naturalHeight}`,
-    ].join('\n'),
-  }
+    // 1. Try direct capture first (fastest)
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = image.naturalWidth || image.width || 100
+      canvas.height = image.naturalHeight || image.height || 100
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(image, 0, 0)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+        const [header, base64] = dataUrl.split(',')
+        result.data = base64
+        result.mimeType = header.split(':')[1].split(';')[0]
+        resolve(result)
+        return
+      }
+    } catch (e) {
+      // Direct capture failed (likely CORS), proceed to fallback reload
+    }
+
+    // 2. Fallback: Reload with crossOrigin = anonymous to try and bypass CORS if the server supports it
+    const imgCopy = new Image()
+    imgCopy.crossOrigin = 'anonymous'
+
+    imgCopy.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = imgCopy.naturalWidth || imgCopy.width || 100
+        canvas.height = imgCopy.naturalHeight || imgCopy.height || 100
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(imgCopy, 0, 0)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+          const [header, base64] = dataUrl.split(',')
+          result.data = base64
+          result.mimeType = header.split(':')[1].split(';')[0]
+        }
+      } catch (err) {
+        console.warn('CORS fallback failed to export canvas:', err)
+      }
+      resolve(result)
+    }
+
+    imgCopy.onerror = () => {
+      console.warn('CORS fallback failed to load image copy')
+      resolve(result)
+    }
+
+    // Use cache-busting parameter to prevent using a cached tainted image response
+    if (src.startsWith('data:')) {
+      imgCopy.src = src
+    } else {
+      const separator = src.includes('?') ? '&' : '?'
+      imgCopy.src = `${src}${separator}crossorigin-bypass=true`
+    }
+  })
 }
 
 function canSelect(element: HTMLElement, config: Required<AIOverlaySelectionConfig>) {
@@ -164,7 +208,7 @@ export function createSelectionController(options: SelectionControllerOptions) {
     }, 0)
   }
 
-  const onClickCapture = (event: MouseEvent) => {
+  const onClickCapture = async (event: MouseEvent) => {
     if (!options.isActive()) {
       return
     }
@@ -193,7 +237,7 @@ export function createSelectionController(options: SelectionControllerOptions) {
     event.preventDefault()
     event.stopPropagation()
 
-    const details = image ? describeImage(image) : describeElement(target)
+    const details = image ? await describeImage(image) : describeElement(target)
     const rect = image ? image.getBoundingClientRect() : target.getBoundingClientRect()
 
     options.onSelection({

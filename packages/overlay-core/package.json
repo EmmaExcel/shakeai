@@ -1,6 +1,6 @@
 {
   "name": "@emmaexcel/shakecursor",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ShakeCursor AI SDK - Framework-agnostic overlay for contextual AI assistance on websites",
   "type": "module",
   "main": "./dist/overlay.js",
