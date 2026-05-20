@@ -1,8 +1,9 @@
 import { createSelectionController } from './selection'
 import { createShakeDetector } from './shake'
-import { askHostedApi, askModel } from './transport'
+import { askHostedApi, askModel, askVision } from './transport'
 import type {
   AIOverlayConfig,
+  AIOverlayInspectElementResult,
   AIOverlayInstance,
   AIOverlaySelection,
   AIOverlaySelectionConfig,
@@ -11,10 +12,12 @@ import type {
 } from './types'
 import { createOverlayUI } from './ui'
 import { isMacLike } from './utils'
+import { ElementInspector } from './inspector'
 
 export type {
   AIOverlayAskPayload,
   AIOverlayConfig,
+  AIOverlayInspectElementResult,
   AIOverlayInstance,
   AIOverlayModelConfig,
   AIOverlaySelection,
@@ -22,9 +25,13 @@ export type {
   AIOverlaySelectionKind,
   AIOverlayThemeConfig,
   AIOverlayTriggerConfig,
+  ElementInspectionData,
+  InspectElementResult,
+  VisionModelConfig,
 } from './types'
+export { ElementInspector }
 
-const defaultTheme: Required<AIOverlayThemeConfig> = {
+const defaultTheme: AIOverlayThemeConfig = {
   primaryColor: '#14b8a6',
   panelBackground: 'rgba(255, 255, 255, 0.96)',
   textColor: '#111827',
@@ -48,6 +55,7 @@ class AIOverlayController implements AIOverlayInstance {
   private active = false
   private shakeCount = 0
   private selection: AIOverlaySelection | null = null
+  private inspectMode = false
   private disposers: Array<() => void> = []
   private ui: ReturnType<typeof createOverlayUI>
   private config: AIOverlayConfig
@@ -59,12 +67,17 @@ class AIOverlayController implements AIOverlayInstance {
     const selectionConfig = { ...defaultSelection, ...config.selection }
 
     this.ui = createOverlayUI({
-      theme: { ...defaultTheme, ...config.theme },
+      theme: { ...defaultTheme, ...config.theme } as any,
       onSubmit: (question) => {
         void this.ask(question)
       },
       onCancel: () => {
         this.clearSelection()
+        if (!this.inspectMode) {
+          return
+        }
+
+        this.deactivateInspectMode()
       },
     })
 
@@ -90,6 +103,12 @@ class AIOverlayController implements AIOverlayInstance {
         onSelection: (selection) => {
           this.selection = selection
           this.ui.setHoverRect(null)
+          
+          // If image is selected and vision is enabled, handle specially
+          if (selection.kind === 'image' && config.model?.visionEnabled) {
+            // Offer vision analysis option
+          }
+          
           this.ui.showPrompt(selection)
           this.config.onSelection?.(selection)
         },
@@ -97,6 +116,13 @@ class AIOverlayController implements AIOverlayInstance {
     )
 
     this.disposers.push(this.bindKeyboardShortcut())
+    
+    // Add element inspection shortcut
+    const inspectShortcut = 'i' // i for inspect
+    document.addEventListener('keydown', (event) => {
+      if (!this.active || event.key !== inspectShortcut) return
+      this.toggleInspectMode()
+    })
   }
 
   activate() {
@@ -137,6 +163,21 @@ class AIOverlayController implements AIOverlayInstance {
     return this.active
   }
 
+  getInspectMode() {
+    return this.inspectMode
+  }
+
+  toggleInspectMode() {
+    this.inspectMode = !this.inspectMode
+    if (this.inspectMode) {
+      document.body.classList.add('ai-inspect-mode')
+      this.config.onInspect?.({ element: null, inspectionData: null })
+    } else {
+      document.body.classList.remove('ai-inspect-mode')
+      this.deactivateInspectMode()
+    }
+  }
+
   private clearSelection() {
     this.selection = null
     this.ui.clearSelection()
@@ -159,13 +200,21 @@ class AIOverlayController implements AIOverlayInstance {
     this.ui.setError('')
 
     try {
-      const response = this.config.siteKey
-        ? await askHostedApi({
-            apiBaseUrl: this.config.apiBaseUrl,
-            siteKey: this.config.siteKey,
-            payload,
-          })
-        : await askModel(this.config.model ?? {}, payload)
+      let response: string
+
+      // Handle vision requests
+      if (this.selection.kind === 'image' && this.config.model?.visionEnabled) {
+        response = await askVision(this.config.model ?? {}, payload)
+      } else if (this.config.siteKey) {
+        response = await askHostedApi({
+          apiBaseUrl: this.config.apiBaseUrl,
+          siteKey: this.config.siteKey,
+          payload,
+        })
+      } else {
+        response = await askModel(this.config.model ?? {}, payload)
+      }
+
       this.ui.setAnswer(response)
       this.config.onResponse?.(response, payload)
     } catch (caughtError) {
@@ -175,6 +224,44 @@ class AIOverlayController implements AIOverlayInstance {
     } finally {
       this.ui.setThinking(false)
     }
+  }
+
+  /**
+   * Inspect an element for editing/manipulation
+   */
+  async inspectElement(target: Element): Promise<AIOverlayInspectElementResult | null> {
+    try {
+
+      const inspectionData = {
+        tagName: target.tagName.toLowerCase(),
+        className: target.className?.split(' ').filter(Boolean),
+        id: target.id || undefined,
+        computedStyle: ElementInspector.getComputedStyles(target as HTMLElement),
+        attributes: ElementInspector.getAttributes(target as HTMLElement),
+        isEditable: (target as HTMLElement).isContentEditable || ['INPUT', 'TEXTAREA'].includes(target.tagName),
+      }
+
+      const result = { element: target, inspectionData }
+
+      this.config.onInspect?.(result)
+      
+      // Auto-close after a delay or on ESC
+      setTimeout(() => {
+        if (!this.active) return
+        this.deactivateInspectMode()
+      }, 10000)
+
+      return result
+    } catch (error) {
+      console.warn('Inspection failed:', error)
+      return null
+    }
+  }
+
+  private deactivateInspectMode() {
+    this.inspectMode = false
+    document.body.classList.remove('ai-inspect-mode')
+    this.config.onDeactivate?.()
   }
 
   private bindKeyboardShortcut() {
@@ -211,6 +298,22 @@ export const AIOverlay = {
   init(config: AIOverlayConfig = {}) {
     return new AIOverlayController(config)
   },
+  
+  /**
+   * Inspect an element at coordinates (uses element under mouse)
+   */
+  async inspectAt(event: MouseEvent): Promise<AIOverlayInspectElementResult | null> {
+    const target = document.elementFromPoint(event.clientX, event.clientY)
+    if (!target || !document.contains(target)) return null
+    
+    const controller = new AIOverlayController({ model: {} })
+    return controller.inspectElement(target)
+  },
+  
+  /**
+   * Standalone element inspector (no AI required)
+   */
+  inspector: ElementInspector,
 }
 
 declare global {
@@ -222,3 +325,18 @@ declare global {
 if (typeof window !== 'undefined') {
   window.AIOverlay = AIOverlay
 }
+
+// Add CSS for inspect mode
+const inspectStyle = document.createElement('style')
+inspectStyle.textContent = `
+  body.ai-inspect-mode * {
+    cursor: crosshair !important;
+  }
+  
+  .ai-inspect-highlight {
+    outline: 3px solid #fbbf24 !important;
+    outline-offset: -3px;
+    border-radius: 4px;
+  }
+`
+document.head.append(inspectStyle)

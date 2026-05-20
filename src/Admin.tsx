@@ -203,7 +203,7 @@ export function Admin() {
               <h2>Installation</h2>
               <div className="install-snippet">
                 <pre>
-                  <code>{`import { AIOverlay } from '@shakecursor/overlay'
+                  <code>{`import { AIOverlay } from '@emmaexcel/shakecursor'
 
 AIOverlay.init({
   siteKey: '${selectedKey}',

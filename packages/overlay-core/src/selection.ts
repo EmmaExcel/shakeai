@@ -82,6 +82,8 @@ function describeImage(image: HTMLImageElement) {
     label: `image: ${alt.slice(0, 64)}`,
     data,
     mimeType,
+    alt,
+    source: src,
     content: [
       'Selected image',
       `Alt text: ${alt}`,
@@ -94,6 +96,15 @@ function describeImage(image: HTMLImageElement) {
 
 function canSelect(element: HTMLElement, config: Required<AIOverlaySelectionConfig>) {
   if (matchesAnySelector(element, config.blockedSelectors)) {
+    return false
+  }
+
+  // Prevent selecting very large container elements (like <body> or full-screen wrappers)
+  const rect = element.getBoundingClientRect()
+  const viewportArea = window.innerWidth * window.innerHeight
+  const elementArea = rect.width * rect.height
+  
+  if (elementArea > viewportArea * 0.5) {
     return false
   }
 
@@ -191,6 +202,8 @@ export function createSelectionController(options: SelectionControllerOptions) {
       content: details.content,
       data: details.data,
       mimeType: details.mimeType,
+      alt: (details as any).alt,
+      source: (details as any).source,
       ...baseSelection(rect),
     })
   }

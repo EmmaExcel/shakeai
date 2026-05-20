@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Main API server with rate limiting and admin interface
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-8787}:8787"
+    environment:
+      - PORT=8787
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-shake-debug-token}
+    volumes:
+      - ./server/data:/app/server/data
+      - ./server/logs:/app/server/logs
+      - ./server/scripts:/app/server/scripts
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Ollama for local LLM serving (optional)
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=/*
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and rate limiting (optional, production)
+  redis:
+    image: redis:alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  ollama-data:
+    driver: local
+  redis-data:
+    driver: local

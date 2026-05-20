@@ -3,6 +3,7 @@ import { mkdir, readFile, appendFile, writeFile, rename } from 'node:fs/promises
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomBytes } from 'node:crypto'
+import RateLimiter, { RATE_LIMIT_REQUESTS } from './rate-limiter.mjs'
 
 const PORT = Number(process.env.PORT ?? 8787)
 const ROOT = dirname(fileURLToPath(new URL('../package.json', import.meta.url)))
@@ -52,6 +53,31 @@ async function readBody(request) {
   }
   const body = Buffer.concat(chunks).toString('utf8')
   return body ? JSON.parse(body) : {}
+}
+
+/**
+ * Sanitize user input to prevent injection attacks
+ */
+function sanitizeInput(value, maxLength = 1000) {
+  if (typeof value !== 'string') {
+    throw new Error('Expected string input')
+  }
+  return value
+    .trim()
+    .substring(0, maxLength)
+    .replace(/[<>"';]/g, '')
+}
+
+/**
+ * Extract query parameters from URL
+ */
+function getQueryParam(request, name) {
+  try {
+    const url = new URL(request.url, `http://${request.headers.host}`)
+    return url.searchParams.get(name)
+  } catch {
+    return null
+  }
 }
 
 function tokenize(value) {
@@ -331,9 +357,17 @@ async function logQuery(entry) {
 async function handleAsk(request, response, origin) {
   const sites = await readJson(SITES_PATH)
   const siteKey = request.headers['x-site-key']
+  
+  // Check rate limiting
+  if (!RateLimiter.check(siteKey).allowed) {
+    return sendJson(response, 429, { error: 'Rate limit exceeded. Please wait before asking another question.' }, origin)
+  }
+
   const site = sites[siteKey]
 
   if (!site) {
+    // Clean up rate limit counter on error
+    RateLimiter.reset(siteKey)
     sendJson(response, 401, { error: 'Invalid site key' }, origin)
     return
   }
@@ -344,8 +378,17 @@ async function handleAsk(request, response, origin) {
   }
 
   const payload = await readBody(request)
+  
+  // Validate and sanitize inputs
   if (!payload.question || !payload.selection) {
     sendJson(response, 400, { error: 'Expected question and selection' }, origin)
+    return
+  }
+
+  const sanitizedQuestion = sanitizeInput(payload.question, 1000)
+  
+  if (!sanitizedQuestion.trim()) {
+    sendJson(response, 400, { error: 'Empty question provided' }, origin)
     return
   }
 
@@ -526,6 +569,28 @@ const server = createServer(async (request, response) => {
   }
 })
 
+// Error logging helper
+async function logError(siteId, question, selection, error) {
+  try {
+    await mkdir(dirname(LOG_PATH), { recursive: true })
+    const errorEntry = {
+      siteId,
+      question,
+      pageUrl: selection?.url,
+      selectionKind: selection?.kind,
+      timestamp: new Date().toISOString(),
+      stack: error instanceof Error ? error.stack : undefined,
+    }
+    await appendFile(
+      `${LOG_PATH}.errors.jsonl`,
+      `${JSON.stringify({ ...errorEntry, at: new Date().toISOString() })}\n`
+    )
+  } catch (logErrorErr) {
+    console.error('Failed to write error log:', logErrorErr.message)
+  }
+}
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Shake Cursor API listening on http://0.0.0.0:${PORT}`)
+  console.log(`Rate limiting enabled: ${RATE_LIMIT_REQUESTS} req/s per site`)
 })

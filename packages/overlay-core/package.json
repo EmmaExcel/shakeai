@@ -1,40 +1,47 @@
 {
   "name": "@emmaexcel/shakecursor",
-  "version": "0.1.2",
-  "description": "Framework-agnostic browser SDK for contextual AI selection overlays.",
+  "version": "1.0.0",
+  "description": "ShakeCursor AI SDK - Framework-agnostic overlay for contextual AI assistance on websites",
   "type": "module",
-  "main": "./dist/overlay.global.js",
-  "module": "./dist/overlay.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/types.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/overlay.js",
-      "default": "./dist/overlay.global.js"
+      "import": "./dist/index.js",
+      "types": "./dist/types.d.ts"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src/types.ts"
   ],
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
-    "build": "vite build --config vite.config.ts && tsc -p tsconfig.json",
-    "prepublishOnly": "npm run build"
-  },
-  "devDependencies": {
-    "vite": "^8.0.12",
-    "typescript": "~6.0.2"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --max-warnings=0"
   },
   "keywords": [
     "ai",
     "overlay",
-    "rag",
-    "contextual",
+    "sdk",
+    "cursor",
     "shake",
-    "cursor"
+    "gesture",
+    "selection",
+    "react"
   ],
-  "author": "EmmaExcel",
-  "license": "MIT"
+  "author": "ShakeCursor Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shakecursor/shakecursor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shakecursor/shakecursor/issues"
+  },
+  "homepage": "https://shakecursor.com",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

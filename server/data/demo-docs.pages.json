@@ -2,7 +2,7 @@
   {
     "url": "https://docs.shakecursor.local/getting-started",
     "title": "Getting Started with Shake Cursor",
-    "content": "Shake Cursor is an open-source library that adds a context-aware AI overlay to any website. It works by monitoring user interactions, specifically the 'shake' gesture of the mouse pointer. When a shake is detected, the overlay appears, allowing the user to ask questions about what they were just looking at. To get started, you need to install the @shakecursor/overlay package and initialize it with your public API key. The library automatically handles selection capture and communication with the Shake Cursor backend. You can customize the look and feel of the overlay using CSS variables or by passing options to the initialization function. For example, you can change the primary color, the shake sensitivity, and the keyboard shortcuts."
+    "content": "Shake Cursor is an open-source library that adds a context-aware AI overlay to any website. It works by monitoring user interactions, specifically the 'shake' gesture of the mouse pointer. When a shake is detected, the overlay appears, allowing the user to ask questions about what they were just looking at. To get started, you need to install the @emmaexcel/shakecursor package and initialize it with your public API key. The library automatically handles selection capture and communication with the Shake Cursor backend. You can customize the look and feel of the overlay using CSS variables or by passing options to the initialization function. For example, you can change the primary color, the shake sensitivity, and the keyboard shortcuts."
   },
   {
     "url": "https://docs.shakecursor.local/activation",
