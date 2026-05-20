@@ -57,7 +57,6 @@ class AIOverlayController implements AIOverlayInstance {
   private shakeCount = 0
   private selection: AIOverlaySelection | null = null
   private inspectMode = false
-  private editMode = false
   private disposers: Array<() => void> = []
   private ui: ReturnType<typeof createOverlayUI>
   private config: AIOverlayConfig
