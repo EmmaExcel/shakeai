@@ -1,18 +1,10 @@
 import type { ElementInspectionData } from './types'
 
-/**
- * Element Inspector - Standalone utility for inspecting and analyzing DOM elements
- * Useful for debugging, development, and creating custom editing tools
- */
 
 export class ElementInspector {
-  /**
-   * Get computed styles for an element (normalized property names)
-   */
   static getComputedStyles(element: HTMLElement): Record<string, string> {
     const styles = getComputedStyle(element)
     
-    // Common properties developers interact with
     return {
       display: styles.display,
       position: styles.position,
@@ -58,9 +50,6 @@ export class ElementInspector {
     }
   }
 
-  /**
-   * Get element attributes as a plain object
-   */
   static getAttributes(element: Element): Record<string, string> {
     return Array.from(element.attributes).reduce((acc, attr) => {
       acc[attr.name] = attr.value
@@ -68,9 +57,6 @@ export class ElementInspector {
     }, {} as Record<string, string>)
   }
 
-  /**
-   * Get human-readable element description
-   */
   static describeElement(element: HTMLElement): ElementInspectionData {
     const computedStyle = ElementInspector.getComputedStyles(element)
     const attributes = ElementInspector.getAttributes(element)
@@ -85,9 +71,6 @@ export class ElementInspector {
     }
   }
 
-  /**
-   * Get element DOM hierarchy (parent chain)
-   */
   static getHierarchy(element: HTMLElement, depth = 3): HTMLElement[] {
     const hierarchy: HTMLElement[] = [element]
     
@@ -99,14 +82,10 @@ export class ElementInspector {
     return hierarchy
   }
 
-  /**
-   * Get full computed style object with normalized property names
-   */
   static getFullStyles(element: HTMLElement): Record<string, string> {
     const styles = getComputedStyle(element)
     const result: Record<string, string> = {}
     
-    // Add common properties
     const commonProps = [
       'display', 'position', 'visibility', 'overflow', 'width', 'height', 'margin', 'padding', 'border',
       'borderRadius', 'borderWidth', 'borderColor', 'backgroundColor', 'background', 'color',
@@ -120,7 +99,6 @@ export class ElementInspector {
       }
     })
     
-    // Add all computed properties
     for (let i = 0; i < styles.length; i++) {
       const prop = styles[i]
       const val = styles.getPropertyValue(prop)
@@ -132,18 +110,12 @@ export class ElementInspector {
     return result
   }
 
-  /**
-   * Check if element is in a specific selector group
-   */
   static matchesSelector(element: Element, selectors: string[]): boolean {
     return selectors.some(selector => 
       element.matches(selector) || element.closest(selector) !== null
     )
   }
 
-  /**
-   * Get all ancestor elements up to document
-   */
   static getAncestors(element: Element): HTMLElement[] {
     const ancestors: HTMLElement[] = []
     let current = element.parentElement
@@ -156,9 +128,6 @@ export class ElementInspector {
     return ancestors
   }
 
-  /**
-   * Create an inspector instance for a specific root context
-   */
   static create(_root: Document | HTMLElement = document): typeof ElementInspector {
     return new Proxy(ElementInspector, {
       get(_, prop) {
@@ -167,9 +136,6 @@ export class ElementInspector {
     })
   }
 
-  /**
-   * Inspect and suggest common edits for the element
-   */
   static analyze(element: HTMLElement): {
     data: ElementInspectionData
     suggestions: Array<{
@@ -189,7 +155,6 @@ export class ElementInspector {
       proposedValue?: string
     }> = []
 
-    // Suggest editing if element is display:block but has no width/height explicitly set
     if (data.computedStyle && data.computedStyle.display === 'block' && !data.computedStyle.width) {
       suggestions.push({
         type: 'style',
@@ -198,7 +163,6 @@ export class ElementInspector {
       })
     }
 
-    // Suggest color adjustments
     if (data.computedStyle && data.computedStyle.color !== '#000000') {
       suggestions.push({
         type: 'style',
@@ -207,7 +171,6 @@ export class ElementInspector {
       })
     }
 
-    // Check for hover states
     if (data.attributes && !data.attributes.onmouseover && !data.attributes.onmouseenter) {
       suggestions.push({
         type: 'attribute',

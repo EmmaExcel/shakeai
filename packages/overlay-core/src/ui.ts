@@ -49,7 +49,6 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
   document.head.append(globalStyle)
   document.body.append(host)
 
-  // ── Premium Styles ─────────────────────────────────────────────
   const enhancedStyles = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -633,11 +632,9 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
   undoBtn?.addEventListener('click', () => options.onUndo())
   copyBtn?.addEventListener('click', () => options.onCopyCSS())
 
-  // Trail lags behind cursor
   const onMouseMove = (e: MouseEvent) => {
     cursor.style.left = `${e.clientX}px`
     cursor.style.top = `${e.clientY}px`
-    // Smoothly follow with a CSS transition delay
     setTimeout(() => {
       if (trail) {
         trail.style.left = `${e.clientX}px`
@@ -696,7 +693,6 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
       answer.textContent = ''
       editControls?.classList.remove('visible')
       
-      // Smart Absolute Positioning relative to selection
       const left = clamp(selection.rect.left + selection.rect.width / 2 - 190, 16, window.innerWidth - 396)
       const top = selection.rect.bottom + window.scrollY + 12
       
@@ -704,7 +700,6 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
       panel.style.top = `${top}px`
       panel.classList.add('visible')
       
-      // Add vision badge if image selection with vision model
       if (selection.kind === 'image' && selection.mimeType) {
         const kindEl = kind as HTMLElement
         const existingBadge = kindEl.querySelector('.vision-badge')
@@ -739,7 +734,6 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
       answer.textContent = ''
       textarea.value = ''
       editControls?.classList.remove('visible')
-      // Remove vision badge on clear
       const kindEl = kind as HTMLElement
       const existingBadge = kindEl.querySelector('.vision-badge')
       if (existingBadge) {
@@ -756,7 +750,6 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
         document.body.classList.add('ai-inspect-mode')
         host.classList.add('inspect-active')
         
-        // Update panel for inspect mode
         if (element && panel) {
           panel.classList.remove('visible')
           panel.classList.add('inspect-mode')
@@ -782,19 +775,14 @@ export function createOverlayUI(options: OverlayUIOptions): OverlayUI {
   }
 }
 
-/**
- * Show inspect mode element information in the panel
- */
 function showInspectInfo(container: HTMLElement, element: HTMLElement) {
   const infoContent = document.createElement('div')
   infoContent.className = 'inspect-data'
   
-  // Element tag
   const tagLabel = document.createElement('div')
   tagLabel.innerHTML = `<span class="inspect-tag">&lt;${element.tagName}&gt;</span> ${getElementDescription(element)}`
   infoContent.appendChild(tagLabel)
 
-  // Class names
   if (element.className) {
     const cls = element.className.split(' ').filter(Boolean).slice(0, 3).join(', ')
     const clsLabel = document.createElement('div')
@@ -802,21 +790,18 @@ function showInspectInfo(container: HTMLElement, element: HTMLElement) {
     infoContent.appendChild(clsLabel)
   }
 
-  // ID if present
   if (element.id) {
     const idLabel = document.createElement('div')
     idLabel.innerHTML = `<span class="inspect-attr">ID:</span> <code class="inspect-value">${escapeHtml(element.id)}</code>`
     infoContent.appendChild(idLabel)
   }
 
-  // Selected state
   if (element.classList.contains('selected')) {
     const selLabel = document.createElement('div')
     selLabel.innerHTML = `<span class="inspect-attr">Status:</span> <strong style="color:#10b981">● Selected</strong>`
     infoContent.appendChild(selLabel)
   }
 
-  // Computed styles (show a few interesting ones)
   const computedStyles: Record<string, string> = {};
   ['display', 'position', 'width', 'height', 'margin', 'padding', 'font-size', 'color'].forEach(prop => {
     const value = getComputedStyle(element).getPropertyValue(prop)
@@ -838,7 +823,6 @@ function showInspectInfo(container: HTMLElement, element: HTMLElement) {
     })
   }
 
-  // Attributes
   const attrs: Record<string, string> = {}
   element.getAttributeNames()?.forEach(name => {
     const value = element.getAttribute(name)
@@ -860,29 +844,21 @@ function showInspectInfo(container: HTMLElement, element: HTMLElement) {
     })
   }
 
-  // Make container scrollable if needed
   const contentArea = container.querySelector('.content-area') as HTMLElement
   if (contentArea) {
     contentArea.appendChild(infoContent)
   }
 }
 
-/**
- * Clear inspect mode information
- */
 function clearInspectInfo(container: HTMLElement | null) {
   if (!container) return
   
-  // Remove inspect data section and revert back
   const existingInfo = container.querySelector('.inspect-data') as HTMLElement
   if (existingInfo) {
     existingInfo.remove()
   }
 }
 
-/**
- * Get human-readable element description
- */
 function getElementDescription(element: HTMLElement): string {
   const ariaLabel = element.getAttribute('aria-label')?.slice(0, 50)
   const title = element.getAttribute('title')?.slice(0, 40)
@@ -896,9 +872,6 @@ function getElementDescription(element: HTMLElement): string {
   return parts.find(Boolean) || ''
 }
 
-/**
- * Escape HTML special characters
- */
 function escapeHtml(str: string): string {
   const div = document.createElement('div')
   div.textContent = str

@@ -82,7 +82,6 @@ function describeImage(image: HTMLImageElement): Promise<{
       ].join('\n'),
     }
 
-    // 1. Try direct capture first (fastest)
     try {
       const canvas = document.createElement('canvas')
       canvas.width = image.naturalWidth || image.width || 100
@@ -98,10 +97,8 @@ function describeImage(image: HTMLImageElement): Promise<{
         return
       }
     } catch (e) {
-      // Direct capture failed (likely CORS), proceed to fallback reload
     }
 
-    // 2. Fallback: Reload with crossOrigin = anonymous to try and bypass CORS if the server supports it
     const imgCopy = new Image()
     imgCopy.crossOrigin = 'anonymous'
 
@@ -129,7 +126,6 @@ function describeImage(image: HTMLImageElement): Promise<{
       resolve(result)
     }
 
-    // Use cache-busting parameter to prevent using a cached tainted image response
     if (src.startsWith('data:')) {
       imgCopy.src = src
     } else {
@@ -144,7 +140,6 @@ function canSelect(element: HTMLElement, config: Required<AIOverlaySelectionConf
     return false
   }
 
-  // Prevent selecting very large container elements (like <body> or full-screen wrappers)
   const rect = element.getBoundingClientRect()
   const viewportArea = window.innerWidth * window.innerHeight
   const elementArea = rect.width * rect.height

@@ -1,4 +1,3 @@
-// ==================== Selection Types ====================
 
 export type AIOverlaySelectionKind = 'text' | 'image' | 'element' | 'file'
 export type SelectionKind = AIOverlaySelectionKind
@@ -11,21 +10,17 @@ export interface AIOverlaySelection {
   content?: string
   title?: string
   mimeType?: string
-  data?: string // Base64 encoded image data
+  data?: string
   width?: number
   height?: number
   alt?: string
   source?: string
-  // Edit mode: reference to the original DOM element
   element?: HTMLElement
-  // Edit mode: computed styles snapshot for context
   computedStyles?: Record<string, string>
-  // Edit mode: generated unique CSS selector for this element
   cssSelector?: string
 }
 export type SelectionData = AIOverlaySelection
 
-// ==================== Edit Types ====================
 
 export interface AIOverlayEditResult {
   selector: string
@@ -33,7 +28,6 @@ export interface AIOverlayEditResult {
   description: string
 }
 
-// ==================== Event Callbacks ====================
 
 export interface OnActivateOptions {
   shakeCount?: number
@@ -85,7 +79,6 @@ export interface ErrorPayload {
 
 export type OnError = (error: ErrorPayload) => void
 
-// ==================== Theme Configuration ====================
 
 export interface AIOverlayThemeConfig {
   primaryColor?: string
@@ -104,7 +97,6 @@ export interface AIOverlayThemeConfig {
 }
 export type ThemeConfig = AIOverlayThemeConfig
 
-// ==================== Site Configuration ====================
 
 export interface AIOverlayModelConfig {
   provider?: 'ollama' | 'openrouter' | 'gemini' | 'custom'
@@ -120,23 +112,19 @@ export interface AIOverlayModelConfig {
   screenshotCapture?: {
     enabled: boolean
     maxDimensions: { width: number; height: number }
-    quality?: number // 0-1 for JPEG quality
+    quality?: number
   }
 }
 export type ModelConfig = AIOverlayModelConfig
 
 export interface VisionModelConfig extends AIOverlayModelConfig {
-  /** Vision-enabled model for image analysis */
   visionEnabled: boolean
-  /** Vision-specific model name (e.g., 'gpt-4o', 'claude-3-opus-20240229', 'llava') */
   visionModel?: string
-  /** Whether to enable bounding box region suggestions */
   suggestRegions?: boolean
-  /** Screenshot capture settings */
   screenshotCapture?: {
     enabled: boolean
     maxDimensions: { width: number; height: number }
-    quality?: number // 0-1 for JPEG quality
+    quality?: number
   }
 }
 
@@ -156,7 +144,6 @@ export interface SiteConfig {
   metadata?: Record<string, any>
 }
 
-// ==================== Admin API Types ====================
 
 export interface QueryLogEntry {
   siteId: string
@@ -169,7 +156,6 @@ export interface QueryLogEntry {
   at: string
 }
 
-// ==================== Analytics Types ====================
 
 export interface ElementInspectionData {
   tagName: string
@@ -204,7 +190,6 @@ export interface EventLog {
   details: Record<string, any>
 }
 
-// ==================== SDK Top Level Types ====================
 
 export interface AIOverlayTriggerConfig {
   shake?: boolean
@@ -226,7 +211,6 @@ export interface AIOverlayConfig {
   trigger?: AIOverlayTriggerConfig
   selection?: AIOverlaySelectionConfig
   theme?: AIOverlayThemeConfig
-  /** Enable AI Edit Mode — lets users ask the AI to apply live CSS changes to elements */
   editEnabled?: boolean
   analytics?: {
     enabled?: boolean

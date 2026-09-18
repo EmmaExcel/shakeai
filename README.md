@@ -1,300 +1,218 @@
-# Shake Cursor - AI Vision & Inspection SDK
+# Shake Cursor
 
-A framework-agnostic AI overlay SDK that brings **vision-enabled image analysis** and **element inspection/editing** directly into your browser. Unlike standard ChatGPT wrappers, Shake Cursor provides deep contextual understanding of web pages through visual analysis and DOM inspection.
+A framework-agnostic web overlay library that adds gesture-driven element inspection and multimodal context capture to browser applications.
 
-![Shake Cursor Logo](./assets/hero.png)
+Shake Cursor activates via mouse shake gesture or keyboard shortcut, allowing users to inspect DOM nodes, capture rendered images, extract text selections, and send structured contextual payloads to custom or hosted model endpoints.
 
-## ✨ What Makes This Different
+## Features
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Shaked Cursor                             │
-│  ┌──────────────────┐   ┌─────────────────────────────────┐ │
-│  │    Vision AI     │   │      Element Inspection          │ │
-│  │  • Image analysis│   │  • Crosshair cursor mode         │ │
-│  │  • OCR text read │   │  • Computed style inspection      │ │
-│  │  • Region boxes  │   │  • Attribute reveal               │ │
-│  └──────────────────┘   │  • Visual feedback                │ │
-│                         │  • Edit preview                   │ │
-│                         └─────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
+- Gesture and shortcut activation: Configurable cursor shake detector with directional hysteresis and keyboard shortcuts.
+- Multimodal selection capture: Captures text ranges, image elements, and DOM nodes with computed styles and selectors.
+- In-browser element inspection: Interactive inspection mode with computed CSS property inspection, hierarchy traversal, and class extraction.
+- Live DOM edits: Style manipulation and CSS rule injection with history tracking.
+- Provider agnostic: Compatible with local models (Ollama), proxy gateways (OpenRouter), hosted APIs (Gemini), or custom backend services.
+- Zero UI framework dependencies: Pure TypeScript and DOM implementation packaged as an ES module and global script.
 
-### 🎯 Vision-Enabled Analysis
-
-When you click on an image, Shake Cursor automatically uses vision-capable models (GPT-4o, Claude 3, LLaVA) to:
-
-- **Analyze visual content** - Describe scenes, objects, and layouts
-- **Read text in images** - OCR for diagrams, charts, and screenshots
-- **Suggest regions** - AI highlights important image sections
-- **Multi-modal context** - Combine visual + DOM + selection data
-
-```typescript
-AIOverlay.init({
-  model: {
-    provider: 'openrouter',
-    model: 'gpt-4o',
-    visionEnabled: true,        // Enable vision mode
-    suggestRegions: true,       // Show bounding box suggestions
-    screenshotCapture: {        // Optional full-page capture
-      enabled: true,
-      maxDimensions: { width: 1200, height: 800 },
-      quality: 0.95,
-    }
-  }
-})
-```
-
-### 🔍 Element Inspection Mode
-
-Press `Ctrl+I` (or configure custom shortcut) to enter inspection mode:
-
-- **Crosshair cursor** - Visual feedback for element targeting
-- **Computed style inspector** - See actual CSS values (display, position, width, height, etc.)
-- **Attribute viewer** - Reveal all element attributes
-- **Class/ID navigator** - Quick identification of targets
-- **Edit preview mode** - Temporary style changes for testing
-
-```typescript
-// Inspect element at cursor position
-const result = await AIOverlay.inspectAt(event)
-if (result?.inspectionData) {
-  console.log('Tag:', result.inspectionData.tagName)
-  console.log('Classes:', result.inspectionData.className)
-  console.log('Styles:', Object.keys(result.inspectionData.computedStyle))
-}
-
-// Standalone inspector (no AI needed)
-const element = document.querySelector('#my-element')
-const analysis = ElementInspector.analyze(element as HTMLElement)
-console.log(analysis.data)           // Inspection data
-console.log(analysis.suggestions)    // Suggested edits
-```
-
-## 🚀 Quick Start
-
-### Installation
+## Installation
 
 ```bash
 npm install @emmaexcel/shakecursor
 ```
 
-### Basic Setup
+## Quick Start
+
+Initialize the overlay in your application entry point:
 
 ```typescript
-import { AIOverlay, ElementInspector } from '@emmaexcel/shakecursor'
+import { AIOverlay } from '@emmaexcel/shakecursor'
 
-// Initialize with vision-enabled model
 AIOverlay.init({
-  siteKey: 'pk_your_api_key',
-  apiBaseUrl: 'https://your-api-endpoint.com',
-  
+  siteKey: 'pk_live_your_key',
+  apiBaseUrl: 'https://api.yourdomain.com',
   trigger: {
     shake: true,
     keyboardShortcut: 'mod+k',
   },
-  
   selection: {
     text: true,
-    images: true,      // Enable image vision analysis
+    images: true,
     elements: true,
   },
-  
   model: {
     provider: 'openrouter',
     endpoint: 'https://api.openrouter.ai/v1/chat/completions',
     model: 'gpt-4o',
-    
-    // Vision capabilities
     visionEnabled: true,
-    visionModel: 'gpt-4o',
     suggestRegions: true,
-    
-    screenshotCapture: {
-      enabled: true,
-      maxDimensions: { width: 1200, height: 800 },
-      quality: 0.95,
-    }
   },
-  
   theme: {
     primaryColor: '#14b8a6',
     borderRadius: 8,
   },
-  
-  // Callbacks
-  onActivate: () => console.log('AI vision mode activated!'),
-  onSelection: (selection) => {
-    if (selection.kind === 'image') {
-      console.log('🖼️ Image ready for vision analysis:', selection.label)
-    }
+  onActivate: () => {
+    console.log('Overlay activated')
   },
-  onAsk: ({ question, selection }) => {
-    // Vision model will analyze image + text automatically
+  onSelection: (selection) => {
+    console.log('Selection:', selection)
   },
 })
-
-// Or use standalone inspector for debugging
-ElementInspector.analyze(document.querySelector('.target'))
 ```
 
-## 📋 API Reference
+## Core Modules
 
 ### AIOverlay
 
+Main controller for overlay lifecycle, input handling, and event routing.
+
 | Method | Description |
-|--------|-------------|
-| `init(config)` | Initialize the overlay with your configuration |
-| `inspectAt(event)` | Inspect element at mouse coordinates |
-| `inspectMode` | Toggle inspect mode programmatically |
-
-### Vision Model Config
-
-```typescript
-interface VisionModelConfig {
-  visionEnabled: boolean              // Enable vision capabilities
-  visionModel?: string                // 'gpt-4o', 'claude-3-opus', 'llava'
-  suggestRegions?: boolean            // Show bounding box suggestions
-  screenshotCapture?: {
-    enabled: boolean
-    maxDimensions: { width: number; height: number }
-    quality?: number                  // 0-1 JPEG quality
-  }
-}
-```
+| --- | --- |
+| `init(config)` | Initialize the global overlay instance. |
+| `activate()` | Programmatically activate the overlay. |
+| `deactivate()` | Dismiss the overlay and clear active selection. |
+| `toggleInspectMode()` | Toggle interactive DOM element inspection mode. |
+| `inspectAt(event)` | Inspect an element at target mouse coordinates. |
+| `getInspectMode()` | Return current inspection mode state. |
+| `destroy()` | Clean up event listeners, UI elements, and styles. |
 
 ### ElementInspector
 
-| Method | Description |
-|--------|-------------|
-| `getComputedStyles(element)` | Get normalized computed styles |
-| `getAttributes(element)` | Get element attributes object |
-| `describeElement(element)` | Get human-readable element description |
-| `getHierarchy(element, depth)` | Get parent chain (up to N levels) |
-| `getFullStyles(element)` | Get all computed style properties |
-| `matchesSelector(element, selectors)` | Check selector matching |
-| `analyze(element)` | Get data + edit suggestions |
-
-## 🎨 Visual Features
-
-### Custom Cursor Animation
+Utility class for programmatic DOM analysis and style inspection without requiring the UI overlay.
 
 ```typescript
-// The SDK includes a custom animated cursor that:
-// • Glows and pulses when active
-// • Transforms to crosshair in inspect mode
-// • Shows shake count on activation
+import { ElementInspector } from '@emmaexcel/shakecursor'
+
+const target = document.querySelector('#content')
+if (target) {
+  const analysis = ElementInspector.analyze(target as HTMLElement)
+  console.log(analysis.data.tagName)
+  console.log(analysis.data.computedStyle)
+  console.log(analysis.suggestions)
+}
 ```
 
-### Unique Panel Design
+| Method | Description |
+| --- | --- |
+| `analyze(element)` | Inspect an element and return tag, attributes, computed styles, and suggestions. |
+| `getComputedStyles(element)` | Return normalized dictionary of computed styles. |
+| `getAttributes(element)` | Extract element attributes as a key-value object. |
+| `describeElement(element)` | Generate human-readable element summary. |
+| `getHierarchy(element, maxDepth)` | Return an array of parent elements up to the specified depth. |
+| `getFullStyles(element)` | Return all non-empty computed CSS properties. |
+| `matchesSelector(element, selectors)` | Verify if an element matches any selector in a list. |
 
-The AI panel features:
-- **Glowing conic-gradient border** with 4-color palette
-- **Dark premium aesthetic** with translucent backgrounds
-- **Smooth animations** for appear/disappear
-- **Smart positioning** that follows selections
+## Configuration Reference
 
-## 🔄 Comparison: ChatGPT Wrapper vs Shake Cursor
+```typescript
+interface AIOverlayConfig {
+  siteKey?: string
+  apiBaseUrl?: string
+  trigger?: {
+    shake?: boolean
+    keyboardShortcut?: string
+    thresholds?: {
+      windowMs?: number
+      cooldownMs?: number
+      minSamples?: number
+      minReversals?: number
+      minDistance?: number
+      minDeltaX?: number
+    }
+  }
+  selection?: {
+    text?: boolean
+    images?: boolean
+    elements?: boolean
+    blockedSelectors?: string[]
+  }
+  theme?: {
+    primaryColor?: string
+    borderRadius?: number
+    fontFamily?: string[]
+  }
+  model?: {
+    provider?: 'ollama' | 'openrouter' | 'gemini' | 'custom'
+    endpoint?: string
+    model?: string
+    visionEnabled?: boolean
+    visionModel?: string
+    suggestRegions?: boolean
+    temperature?: number
+    maxTokens?: number
+    timeout?: number
+  }
+  editEnabled?: boolean
+  onActivate?: (options: { shakeCount?: number }) => void
+  onDeactivate?: () => void
+  onSelection?: (selection: AIOverlaySelection) => void
+  onAsk?: (payload: { question: string; selection?: AIOverlaySelection }) => void
+  onResponse?: (response: string, payload?: AIOverlayAskPayload) => void
+  onError?: (error: Error) => void
+  onInspect?: (result: { element: HTMLElement; inspectionData: ElementInspectionData }) => void
+}
+```
 
-| Feature | Standard Wrapper | Shake Cursor |
-|---------|------------------|--------------|
-| Image analysis | Manual upload ❌ | Click → Auto-analyze ✅ |
-| DOM context | None ⚠️ | Full selection + styles ✅ |
-| Inspect mode | N/A ❌ | Crosshair + computed styles ✅ |
-| Region suggestions | N/A ❌ | AI provides bounding boxes ✅ |
-| Visual feedback | Basic ⚠️ | Glowing borders, custom cursor ✅ |
-| Edit preview | Copy/paste required ✅ | Direct inspection ✅ |
-| Multi-modal input | Limited ⚠️ | Image + DOM + text ✅ |
+## Provider Examples
 
-## 🛠️ Use Cases
+### OpenRouter
 
-### 1. E-commerce Product Analysis
-- Click product image → AI analyzes features
-- Get region suggestions for close-ups
-- Extract specs from diagrams with OCR
-
-### 2. Web Accessibility Audit
-- Inspect mode reveals computed styles
-- Identify color contrast issues
-- Review ARIA and role attributes
-
-### 3. Content Moderation
-- Vision models detect inappropriate content
-- Region highlighting flags problematic areas
-- Automated text extraction for review
-
-### 4. Debugging & Development
-- Crosshair inspection of any element
-- View computed styles directly
-- Get attribute hierarchy instantly
-
-### 5. Research & Documentation
-- Analyze charts, graphs, and diagrams
-- Extract labels and annotations from images
-- Multi-modal analysis of complex layouts
-
-## 🔒 Privacy & Security
-
-Shake Cursor respects user privacy:
-- **No telemetry** by default
-- All processing local-first when using Ollama/self-hosted endpoints
-- Image data only sent when visionEnabled is true
-- Optional screenshot capture (opt-in)
-- Respects `data-ai-overlay-ignore` markers
-
-## 📦 Configuration Examples
-
-### OpenRouter with GPT-4o Vision
 ```typescript
 AIOverlay.init({
-  siteKey: 'pk_openrouter_demo',
+  siteKey: 'pk_openrouter',
   apiBaseUrl: 'https://api.openrouter.ai/v1',
   model: {
     provider: 'openrouter',
+    endpoint: 'https://api.openrouter.ai/v1/chat/completions',
     model: 'gpt-4o',
     visionEnabled: true,
-    suggestRegions: true,
-  }
+  },
 })
 ```
 
-### Ollama with LLaVA Vision
+### Local Ollama
+
 ```typescript
 AIOverlay.init({
-  siteKey: 'pk_ollama_demo',
-  apiBaseUrl: 'http://localhost:11434/api/chat',
   model: {
     provider: 'ollama',
-    model: 'llava',  // or 'bakLLaVA', 'moondream'
+    endpoint: 'http://localhost:11434/api/chat',
+    model: 'llava',
     visionEnabled: true,
-  }
+  },
 })
 ```
 
-### Custom Vision API (Anthropic Claude)
+### Custom Endpoint
+
 ```typescript
 AIOverlay.init({
-  siteKey: 'pk_custom_demo',
-  apiBaseUrl: 'https://your-api.com/v1/chat/completions',
   model: {
     provider: 'custom',
-    endpoint: 'https://your-claude-endpoint.com',
-    model: 'claude-3-opus-20240229',
+    endpoint: 'https://api.example.com/v1/analyze',
     headers: {
-      'x-api-key': 'your_key',
-      'anthropic-version': '2023-06-01',
+      'Authorization': 'Bearer YOUR_TOKEN',
     },
     visionEnabled: true,
-  }
+  },
 })
 ```
 
-## 📄 License
+## Architecture
 
-MIT License - See LICENSE file for details
+Shake Cursor is organized into modular subsystems:
 
----
+- `packages/overlay-core/src/shake.ts`: Pointer tracking algorithm analyzing delta vectors, direction changes, and velocity to distinguish intentional shake gestures from standard scrolling.
+- `packages/overlay-core/src/selection.ts`: Selection interceptor capturing text ranges, canvas/image pixel buffers, and DOM coordinates.
+- `packages/overlay-core/src/inspector.ts`: DOM traversal and computed CSS style extraction.
+- `packages/overlay-core/src/editor.ts`: CSS rule generation, live stylesheet injection, and undo stack management.
+- `packages/overlay-core/src/ui.ts`: Scoped DOM overlay interface with cursor feedback.
+- `packages/overlay-core/src/transport.ts`: Request serialization and multi-provider client dispatch.
 
-**Built with ❤️ by the Shake Cursor Team**
+## Privacy and Data Handling
 
-*Vision-enabled AI inspection SDK that goes beyond ChatGPT wrappers*
+- No automatic telemetry: Data is only transmitted when an explicit selection prompt is submitted.
+- Sensitive elements protection: Configurable `blockedSelectors` prevent selection of inputs, passwords, or elements marked with `[data-ai-private]`.
+- Local execution: Compatible with local backends like Ollama to keep all interactions within the host network.
+
+## License
+
+MIT

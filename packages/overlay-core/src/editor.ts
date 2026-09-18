@@ -1,6 +1,5 @@
 import type { AIOverlayEditResult } from './types'
 
-// The key CSS properties we send as context to the AI
 const CONTEXT_STYLE_PROPS = [
   'color', 'background-color', 'background', 'font-size', 'font-weight',
   'font-family', 'line-height', 'letter-spacing', 'text-align',
@@ -13,19 +12,17 @@ const CONTEXT_STYLE_PROPS = [
 
 const STYLE_TAG_ID = 'shakecursor-edits'
 
-// ── History Stack ─────────────────────────────────────────────────────────────
 
 type HistoryEntry = {
   selector: string
-  previousCSS: string   // the full rule block before this edit
-  nextCSS: string       // the full rule block after this edit
+  previousCSS: string
+  nextCSS: string
   description: string
 }
 
 const history: HistoryEntry[] = []
 let historyIndex = -1
 
-// ── Style Tag Management ──────────────────────────────────────────────────────
 
 function getOrCreateStyleTag(): HTMLStyleElement {
   let tag = document.getElementById(STYLE_TAG_ID) as HTMLStyleElement | null
@@ -56,7 +53,6 @@ function writeRule(selector: string, css: Record<string, string>) {
   const tag = getOrCreateStyleTag()
   const sheet = tag.sheet!
 
-  // Remove any existing rule for this selector
   for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
     const rule = sheet.cssRules[i] as CSSStyleRule
     if (rule.selectorText === selector) {
@@ -73,10 +69,8 @@ function writeRule(selector: string, css: Record<string, string>) {
   sheet.insertRule(`${selector} { ${declarations} }`, sheet.cssRules.length)
 }
 
-// ── Unique CSS Selector Builder ───────────────────────────────────────────────
 
 export function buildUniqueSelector(el: HTMLElement): string {
-  // ID is the most specific — use it directly if available
   if (el.id) return `#${CSS.escape(el.id)}`
 
   const parts: string[] = []
@@ -99,7 +93,6 @@ export function buildUniqueSelector(el: HTMLElement): string {
       selector += classes
     }
 
-    // Add nth-child if there are siblings with the same tag
     const parent = current.parentElement
     if (parent) {
       const siblings = Array.from(parent.children).filter(
@@ -118,7 +111,6 @@ export function buildUniqueSelector(el: HTMLElement): string {
   return parts.join(' > ')
 }
 
-// ── Element Style Context ─────────────────────────────────────────────────────
 
 export function collectElementContext(el: HTMLElement): Record<string, string> {
   const computed = window.getComputedStyle(el)
@@ -130,7 +122,6 @@ export function collectElementContext(el: HTMLElement): Record<string, string> {
   return result
 }
 
-// ── Apply Edit ────────────────────────────────────────────────────────────────
 
 export function applyEdit(result: AIOverlayEditResult) {
   const prevRule = getCurrentRuleForSelector(result.selector)
@@ -139,7 +130,6 @@ export function applyEdit(result: AIOverlayEditResult) {
 
   const nextRule = getCurrentRuleForSelector(result.selector)
 
-  // Trim history forward if we're mid-stack
   history.splice(historyIndex + 1)
 
   history.push({
@@ -151,7 +141,6 @@ export function applyEdit(result: AIOverlayEditResult) {
   historyIndex = history.length - 1
 }
 
-// ── Undo / Redo ───────────────────────────────────────────────────────────────
 
 export function undoEdit(): string | null {
   if (historyIndex < 0) return null
@@ -162,7 +151,6 @@ export function undoEdit(): string | null {
   const tag = getOrCreateStyleTag()
   const sheet = tag.sheet!
 
-  // Remove the rule we wrote
   for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
     const rule = sheet.cssRules[i] as CSSStyleRule
     if (rule.selectorText === entry.selector) {
@@ -170,7 +158,6 @@ export function undoEdit(): string | null {
     }
   }
 
-  // Restore previous rule if there was one
   if (entry.previousCSS) {
     sheet.insertRule(entry.previousCSS, sheet.cssRules.length)
   }
@@ -204,7 +191,6 @@ export function redoEdit(): string | null {
 export function canUndo() { return historyIndex >= 0 }
 export function canRedo() { return historyIndex < history.length - 1 }
 
-// ── Export Generated CSS ──────────────────────────────────────────────────────
 
 export function exportGeneratedCSS(): string {
   const tag = document.getElementById(STYLE_TAG_ID)

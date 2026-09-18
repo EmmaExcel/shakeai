@@ -120,9 +120,7 @@ class AIOverlayController implements AIOverlayInstance {
           this.selection = selection
           this.ui.setHoverRect(null)
           
-          // If image is selected and vision is enabled, handle specially
           if (selection.kind === 'image' && config.model?.visionEnabled) {
-            // Offer vision analysis option
           }
           
           this.ui.showPrompt(selection)
@@ -133,8 +131,7 @@ class AIOverlayController implements AIOverlayInstance {
 
     this.disposers.push(this.bindKeyboardShortcut())
     
-    // Add element inspection shortcut
-    const inspectShortcut = 'i' // i for inspect
+    const inspectShortcut = 'i'
     document.addEventListener('keydown', (event) => {
       if (!this.active || event.key !== inspectShortcut) return
       this.toggleInspectMode()
@@ -218,7 +215,6 @@ class AIOverlayController implements AIOverlayInstance {
     try {
       let response: string
 
-      // Handle vision requests
       if (this.selection.kind === 'image' && this.config.model?.visionEnabled) {
         response = await askVision(this.config.model ?? {}, payload)
       } else if (this.config.siteKey) {
@@ -284,9 +280,6 @@ class AIOverlayController implements AIOverlayInstance {
     }
   }
 
-  /**
-   * Inspect an element for editing/manipulation
-   */
   async inspectElement(target: Element): Promise<AIOverlayInspectElementResult | null> {
     try {
 
@@ -303,7 +296,6 @@ class AIOverlayController implements AIOverlayInstance {
 
       this.config.onInspect?.(result)
       
-      // Auto-close after a delay or on ESC
       setTimeout(() => {
         if (!this.active) return
         this.deactivateInspectMode()
@@ -357,9 +349,6 @@ export const AIOverlay = {
     return new AIOverlayController(config)
   },
   
-  /**
-   * Inspect an element at coordinates (uses element under mouse)
-   */
   async inspectAt(event: MouseEvent): Promise<AIOverlayInspectElementResult | null> {
     const target = document.elementFromPoint(event.clientX, event.clientY)
     if (!target || !document.contains(target)) return null
@@ -368,9 +357,6 @@ export const AIOverlay = {
     return controller.inspectElement(target)
   },
   
-  /**
-   * Standalone element inspector (no AI required)
-   */
   inspector: ElementInspector,
 }
 
@@ -384,7 +370,6 @@ if (typeof window !== 'undefined') {
   window.AIOverlay = AIOverlay
 }
 
-// Add CSS for inspect mode
 const inspectStyle = document.createElement('style')
 inspectStyle.textContent = `
   body.ai-inspect-mode * {
